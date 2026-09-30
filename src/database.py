@@ -12,6 +12,42 @@ from .logger import log_debug, log_info, log_warning, log_error, log_critical, l
 db_lock = Lock()
 
 
+# ==================== NTRIP_ANON_PATCH ====================
+def is_anonymous_mount(mount):
+    """Publichnyy li mountpoint dlya CHTENIYA (anonimnyy dostup).
+
+    Priznaki: config.ANONYMOUS_READS / '*' v spiske, tochnoe imya ili prefiks v spiske,
+    libo parol mountpointa raven 'public' / 'anonymous' (mozhno zadat cherez web-UI).
+    Suschestvovanie mountpointa proveryaetsya.
+    """
+    try:
+        name = (mount or '').lstrip('/')
+        if not name:
+            return False
+        patterns = list(getattr(config, 'ANONYMOUS_MOUNTS', []) or [])
+        if getattr(config, 'ANONYMOUS_READS', False):
+            patterns.append('*')
+        allow = False
+        for p in patterns:
+            if p == '*' or p == name or (p.endswith('*') and name.startswith(p[:-1])):
+                allow = True
+                break
+        with db_lock:
+            conn = sqlite3.connect(config.DATABASE_PATH)
+            try:
+                row = conn.execute("SELECT password FROM mounts WHERE mount = ?", (name,)).fetchone()
+            finally:
+                conn.close()
+        if not row:
+            return False
+        if allow:
+            return True
+        return str(row[0]) in ('public', 'anonymous')
+    except Exception as e:
+        log_error('Anonymous mount check error: {0}'.format(e))
+        return False
+
+
 def hash_password(password, salt=None):
     """使用PBKDF2和SHA256哈希密码"""
     if salt is None:
@@ -440,6 +476,10 @@ class DatabaseManager:
     def verify_mount_and_user(self, mount, username=None, password=None, mount_password=None, protocol_version="1.0"):
         """验证挂载点和用户"""
         return verify_mount_and_user(mount, username, password, mount_password, protocol_version)
+
+    def is_anonymous_mount(self, mount):
+        """NTRIP_ANON_PATCH: publichnyy li mountpoint dlya chteniya."""
+        return is_anonymous_mount(mount)
     
     def add_user(self, username, password):
         """添加用户"""

@@ -573,7 +573,17 @@ class NTRIPHandler:
             # 统一处理挂载点名称，确保去除前导/
             mount_name = mount.lstrip('/')
             self.mount = mount_name
-            
+# NTRIP_ANON_PATCH: anonimnoe chtenie
+            if request_type == "download":
+                try:
+                    if self.db_manager.is_anonymous_mount(mount_name):
+                        self.username = "anonymous_" + mount_name
+                        logger.log_info("Anonymous read access allowed: mount={0} client={1}"
+                                        .format(mount_name, self.client_address[0]), 'ntrip')
+                        return True, "Anonymous read access allowed"
+                except Exception as _anon_err:
+                    logger.log_debug("Anonymous check failed: {0}".format(_anon_err), 'ntrip')
+                        
             if self.protocol_type == "ntrip1_0":
                 
                 if auth_header.startswith('Basic '):

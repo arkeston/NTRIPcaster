@@ -401,3 +401,26 @@ def get_config_dict():
         'rtcm_parse_interval': RTCM_PARSE_INTERVAL
     }
     #雪碧+咖啡=不好喝~！
+
+
+# ==================== NTRIP_ANON_PATCH ====================
+# Anonimnoe chtenie: publikueye mountpointy otdayutsya bez avtorizacii.
+#   NTRIP_ANONYMOUS_READS=1           — anonimno chitat VSE mountpointy
+#   NTRIP_ANONYMOUS_MOUNTS=ROAM,RTK*  — tolko ukazannye (tochnoe imya ili prefiks)
+# Takzhe uvazhaetsya config.ini [NTRIP] anonymous_reads / anonymous_mounts i parol
+# mountpointa, ravnyy 'public' (udobno perekluchat cherez web-UI).
+import os as _anon_os
+ANONYMOUS_READS = (str(_anon_os.environ.get('NTRIP_ANONYMOUS_READS', '')).strip().lower()
+                   in ('1', 'true', 'yes', 'on'))
+_env_mounts = _anon_os.environ.get('NTRIP_ANONYMOUS_MOUNTS', '')
+ANONYMOUS_MOUNTS = [m.strip() for m in _env_mounts.split(',') if m.strip()]
+if not ANONYMOUS_MOUNTS:
+    try:
+        ANONYMOUS_MOUNTS = get_config_value('ntrip', 'anonymous_mounts', '', list) or []
+    except Exception:
+        ANONYMOUS_MOUNTS = []
+if not ANONYMOUS_READS:
+    try:
+        ANONYMOUS_READS = bool(get_config_value('ntrip', 'anonymous_reads', False, bool))
+    except Exception:
+        ANONYMOUS_READS = False
