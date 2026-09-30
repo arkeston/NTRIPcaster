@@ -21,8 +21,31 @@ if os.path.exists(CONFIG_FILE):
 else:
     raise FileNotFoundError(f"Profile{CONFIG_FILE}does not exist")
 
+# NTRIP_CONFIG_CASE_FIX: sekcii i klyuchi v config.ini mogut byt v lyubom registre
+def _cfg_resolve(section, key):
+    """Vozvrashchaet fakticheskie imena sekcii/klyucha (bez ucheta registra)."""
+    sec = section
+    if not config.has_section(sec):
+        for name in config.sections():
+            if name.lower() == str(section).lower():
+                sec = name
+                break
+    opt = key
+    try:
+        if config.has_option(sec, opt):
+            return sec, opt
+        for name in config.options(sec):
+            if name.lower() == str(key).lower():
+                return sec, name
+    except Exception:
+        pass
+    return sec, opt
+
+
+
 def get_config_value(section, key, fallback=None, value_type=str):
     """获取配置值并转换类型"""
+    section, key = _cfg_resolve(section, key)
     try:
         if value_type == bool:
             return config.getboolean(section, key, fallback=fallback)

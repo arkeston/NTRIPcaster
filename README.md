@@ -1,3 +1,68 @@
+# NTRIPcaster — fork with English UI and anonymous read access
+
+> **Fork of [Rampump/NTRIPcaster](https://github.com/Rampump/NTRIPcaster)** maintained by
+> [@arkeston](https://github.com/arkeston). Base commit: `1bceb9b`. The upstream README is kept below, unchanged.
+
+## Why this fork exists
+
+The upstream caster is a Chinese build: log messages, API responses, web-UI labels and the container
+entrypoint messages are Chinese, and the caster always demands credentials — even to *read* a stream.
+We run a small NTRIP fleet (one caster behind per-site haproxy entrances) and needed two things:
+
+1. an **English** interface and log, and
+2. the ability to let anyone **receive** corrections, while keeping **publishing** (base stations) strictly
+   authenticated.
+
+## Changes in this fork
+
+| # | Change | Notes |
+|---|---|---|
+| 1 | **English localization** — 720 translation units | Python string literals, HTML/JS labels, `entrypoint.sh` messages, `config.ini` comments. Code comments and docstrings are intentionally left in Chinese (not user-visible) |
+| 2 | **Anonymous read access** | A mount point marked *public* can be read **with no credentials or with any credentials**; `SOURCE` (upload/publishing) always requires NTRIP authentication. Off by default |
+| 3 | **Bug fix: `config.ini` was ignored** | The code reads lowercase section names (`get_config_value('database', …)`) while the shipped file uses uppercase (`[DATABASE]`), so *every* value silently fell back to its default. Sections and keys are now resolved case-insensitively |
+| 4 | Documentation | This section plus [`FORK-CHANGES.md`](FORK-CHANGES.md) with details, verification results and deployment notes |
+
+## Enabling anonymous read access
+
+Three equivalent ways — any one is enough, the first needs no configuration at all:
+
+| Method | How |
+|---|---|
+| Per mount point (no config) | set the mount point's password to `public` (for public mounts the password is not checked when reading) |
+| Environment variables | `-e NTRIP_ANONYMOUS_MOUNTS=ROAM,RTK*` (exact names or prefixes) or `-e NTRIP_ANONYMOUS_READS=1` (all mount points) |
+| Config file | `[ntrip]` → `anonymous_reads = true` / `anonymous_mounts = ROAM,RTK*` (works thanks to change #3) |
+
+Publishing is **never** anonymous: `SOURCE` requests go through the regular `mounts.password` /
+`users` check, and NTRIP 2.0 clients are still validated against `users`.
+
+## Quick check after start
+
+```bash
+# public mount point, no credentials -> expect "ICY 200 OK"
+printf 'GET /ROAM HTTP/1.0\r\nUser-Agent: NTRIP test\r\n\r\n' | nc <host> 2101
+
+# publishing without credentials -> expect "401 Unauthorized" / "SOURCETABLE 401"
+printf 'SOURCE /ROAM HTTP/1.0\r\nUser-Agent: NTRIP test\r\n\r\n' | nc <host> 2101
+```
+
+## Verification done on this fork
+
+* `python -m compileall src main.py healthcheck.py` — clean;
+* sandbox container from a **copy of a production database**: reading a public mount point without credentials
+  and with a bogus password → `ICY 200 OK`; reading a closed mount point → `401`; `SOURCE` without credentials →
+  `401`; application log shows `Anonymous read access allowed: mount=…`;
+* the same checks were repeated on a live caster before and after deployment.
+
+## Known issues / roadmap
+
+* no setting for anonymous access in the web UI yet (works via config/env/password only);
+* container startup takes 5–30 s before the caster accepts connections — being investigated;
+* the image `healthcheck` calls `/health`, which returns 404 (we run with `--no-healthcheck`).
+
+Details and the full to-do list live next to the deployment scripts in our infrastructure repository.
+
+---
+
 # 2RTK NTRIP Caster v2.2.0
 
 **Language / 语言选择:**
