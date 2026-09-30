@@ -2,15 +2,15 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-REM NTRIP Caster Docker 部署脚本 (批处理版本)
-REM 用于在 Windows 环境下管理 NTRIP Caster 的 Docker 容器
+REM NTRIP Caster Docker Deployment script (Batch Version)
+REM Used in Windows Management in an environment NTRIP Caster 's Docker Container
 
-REM 项目配置
+REM Project Configuration
 set "PROJECT_NAME=ntrip-caster"
 set "SCRIPT_DIR=%~dp0"
 set "ENV_FILE=%SCRIPT_DIR%.env"
 
-REM 颜色定义 (Windows 10+ 支持 ANSI 颜色)
+REM Color definitions (Windows 10+ Support ANSI Color)
 set "RED=[31m"
 set "GREEN=[32m"
 set "YELLOW=[33m"
@@ -19,14 +19,14 @@ set "PURPLE=[35m"
 set "CYAN=[36m"
 set "NC=[0m"
 
-REM 启用 ANSI 颜色支持
+REM Enable ANSI Color support
 reg add HKCU\Console /v VirtualTerminalLevel /t REG_DWORD /d 1 /f >nul 2>&1
 
-REM 获取命令参数
+REM Get command parameters
 set "COMMAND=%1"
 if "%COMMAND%"=="" set "COMMAND=help"
 
-REM 日志函数
+REM Log function
 :log_info
 echo %BLUE%[INFO]%NC% %~1
 goto :eof
@@ -47,34 +47,34 @@ goto :eof
 echo %PURPLE%[STEP]%NC% %~1
 goto :eof
 
-REM 显示横幅
+REM Show banner
 :show_banner
 echo %CYAN%
 echo ╔══════════════════════════════════════════════════════════════╗
-echo ║                    NTRIP Caster 部署脚本                    ║
-echo ║                      批处理版本                              ║
+echo ║                    NTRIP Caster Deployment script                    ║
+echo ║                      Batch Version                              ║
 echo ╚══════════════════════════════════════════════════════════════╝
 echo %NC%
 goto :eof
 
-REM 检查 Docker 环境
+REM Check Docker Environment
 :check_docker
-call :log_step "检查 Docker 环境..."
+call :log_step "Check Docker Environment..."
 
-REM 检查 Docker
+REM Check Docker
 docker --version >nul 2>&1
 if errorlevel 1 (
-    call :log_error "Docker 未安装，请先安装 Docker Desktop"
-    echo 下载地址: https://www.docker.com/products/docker-desktop
+    call :log_error "Docker is not installed, please install it first Docker Desktop"
+    echo Download address: https://www.docker.com/products/docker-desktop
     exit /b 1
 )
 
-REM 检查 Docker Compose
+REM Check Docker Compose
 docker compose version >nul 2>&1
 if errorlevel 1 (
     docker-compose --version >nul 2>&1
     if errorlevel 1 (
-        call :log_error "Docker Compose 未安装"
+        call :log_error "Docker Compose Not installed"
         exit /b 1
     ) else (
         set "DOCKER_COMPOSE_CMD=docker-compose"
@@ -83,17 +83,17 @@ if errorlevel 1 (
     set "DOCKER_COMPOSE_CMD=docker compose"
 )
 
-REM 检查 Docker 服务状态
+REM Check Docker Service Status
 docker info >nul 2>&1
 if errorlevel 1 (
-    call :log_error "Docker 服务未运行，请启动 Docker Desktop"
+    call :log_error "Docker Service is not running, please start Docker Desktop"
     exit /b 1
 )
 
-call :log_success "Docker 环境检查完成"
+call :log_success "Docker Environmental inspection completed"
 goto :eof
 
-REM 加载环境变量
+REM Load environment variables
 :load_env
 if exist "%ENV_FILE%" (
     for /f "usebackq tokens=1,2 delims==" %%a in ("%ENV_FILE%") do (
@@ -101,13 +101,13 @@ if exist "%ENV_FILE%" (
             set "%%a=%%b"
         )
     )
-    call :log_info "已加载环境变量"
+    call :log_info "Environment variables loaded"
 ) else (
-    call :log_warning ".env 文件不存在，使用默认配置"
+    call :log_warning ".env File does not exist, use default configuration"
 )
 goto :eof
 
-REM 构建 Docker Compose 命令
+REM Build Docker Compose Command
 :build_compose_cmd
 if "%ENVIRONMENT%"=="" set "ENVIRONMENT=development"
 if "%PROFILES%"=="" set "PROFILES=dev"
@@ -128,46 +128,46 @@ for %%p in (%PROFILES:,= %) do (
 set "FULL_COMPOSE_CMD=%DOCKER_COMPOSE_CMD% %COMPOSE_FILES% %PROFILE_ARGS%"
 goto :eof
 
-REM 执行 Docker Compose 命令
+REM Execution Docker Compose Command
 :run_compose
 call :build_compose_cmd
 set "FULL_CMD=%FULL_COMPOSE_CMD% %*"
-call :log_info "执行命令: %FULL_CMD%"
+call :log_info "Execute the command: %FULL_CMD%"
 %FULL_CMD%
 goto :eof
 
-REM 创建必要目录
+REM Create required directories
 :create_directories
-call :log_step "创建必要目录..."
+call :log_step "Create required directories..."
 
 set "DIRS=data logs secrets nginx\logs redis monitoring\prometheus\rules monitoring\grafana\provisioning\datasources monitoring\grafana\provisioning\dashboards monitoring\grafana\dashboards backup"
 
 for %%d in (%DIRS%) do (
     if not exist "%%d" (
         mkdir "%%d" 2>nul
-        call :log_info "创建目录: %%d"
+        call :log_info "Create directory:%%d"
     )
 )
 
-call :log_success "目录创建完成"
+call :log_success "Catalog creation complete"
 goto :eof
 
-REM 健康检查
+REM Health Check
 :health_check
-call :log_step "执行健康检查..."
+call :log_step "Perform health checks..."
 
 if exist "healthcheck.py" (
     python healthcheck.py
 ) else (
-    call :log_warning "健康检查脚本不存在，跳过检查"
+    call :log_warning "Health check script does not exist, skipping check"
 )
 goto :eof
 
-REM 显示服务信息
+REM Show service information
 :show_info
-call :log_step "服务信息:"
+call :log_step "Service Information:"
 
-REM 获取本机IP
+REM Get NativeIP
 for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4"') do (
     for /f "tokens=1" %%b in ("%%a") do (
         set "LOCAL_IP=%%b"
@@ -178,85 +178,85 @@ set "LOCAL_IP=localhost"
 
 :ip_found
 echo.
-echo 📡 NTRIP Caster 服务:
-echo    - NTRIP 端口: ntrip://%LOCAL_IP%:2101
-echo    - Web 管理界面: http://%LOCAL_IP%:5757
+echo 📡 NTRIP Caster Services:
+echo    - NTRIP Port: ntrip://%LOCAL_IP%:2101
+echo    - Web Admin Interface: http://%LOCAL_IP%:5757
 
 echo %PROFILES% | findstr /c:"monitoring" >nul
 if not errorlevel 1 (
     echo.
-    echo 📊 监控服务:
+    echo 📊 Monitoring services:
     echo    - Prometheus: http://%LOCAL_IP%:9090
     echo    - Grafana: http://%LOCAL_IP%:3000 ^(admin/admin123^)
 )
 
 if "%ENVIRONMENT%"=="development" (
     echo.
-    echo 🛠️ 开发工具:
-    echo    - Adminer ^(数据库管理^): http://%LOCAL_IP%:8081
-    echo    - Dozzle ^(日志查看^): http://%LOCAL_IP%:8082
-    echo    - cAdvisor ^(容器监控^): http://%LOCAL_IP%:8083
+    echo 🛠️ Development tools:
+    echo    - Adminer ^(Database management^): http://%LOCAL_IP%:8081
+    echo    - Dozzle ^(Log view^): http://%LOCAL_IP%:8082
+    echo    - cAdvisor ^(Container monitoring^): http://%LOCAL_IP%:8083
 )
 
 echo.
 goto :eof
 
-REM 显示帮助信息
+REM Show help
 :show_help
 echo.
-echo NTRIP Caster Docker 部署脚本 ^(批处理版本^)
+echo NTRIP Caster Docker Deployment script ^(Batch Version^)
 echo.
-echo 用法: docker-deploy.bat ^<命令^> [选项]
+echo Usage: docker-deploy.bat ^<Command^> [Options]
 echo.
-echo 基本命令:
-echo   up              启动服务
-echo   down            停止服务
-echo   restart         重启服务
-echo   status          查看服务状态
-echo   logs            查看服务日志
-echo   build           构建镜像
-echo   pull            拉取镜像
-echo   clean           清理资源
+echo Basic commands:
+echo   up              Start the service
+echo   down            Stop the service
+echo   restart         Restart the service
+echo   status          View service status
+echo   logs            View service logs
+echo   build           Build an image
+echo   pull            Pull image
+echo   clean           Clean up resources
 echo.
-echo 管理命令:
-echo   health          健康检查
-echo   info            显示服务信息
-echo   backup          备份数据
-echo   create_dirs     创建必要目录
+echo Administrative Commands:
+echo   health          Health Check
+echo   info            Show service information
+echo   backup          Backup data
+echo   create_dirs     Create required directories
 echo.
-echo 环境变量:
-echo   ENVIRONMENT     部署环境 ^(development^|production^)
-echo   PROFILES        服务配置文件 ^(dev^|prod^|monitoring^|full^)
+echo Environment variables:
+echo   ENVIRONMENT     Deployment environment ^(development^|production^)
+echo   PROFILES        Service Profiles ^(dev^|prod^|monitoring^|full^)
 echo.
-echo 示例:
+echo Example:
 echo   docker-deploy.bat up -d
 echo   set ENVIRONMENT=production ^&^& docker-deploy.bat up
 echo   set PROFILES=monitoring ^&^& docker-deploy.bat restart
 echo.
 goto :eof
 
-REM 主函数
+REM Main function
 :main
 call :show_banner
 
-REM 检查是否在正确目录
+REM Check if it is in the correct directory
 if not exist "docker-compose.yml" (
-    call :log_error "请在 NTRIP Caster 项目根目录下运行此脚本"
+    call :log_error "Please refer to the NTRIP Caster Run this script under the project root"
     pause
     exit /b 1
 )
 
-REM 检查 Docker 环境
+REM Check Docker Environment
 call :check_docker
 if errorlevel 1 exit /b 1
 
-REM 加载环境变量
+REM Load environment variables
 call :load_env
 
-REM 执行命令
+REM Execute the command
 if "%COMMAND%"=="help" goto :show_help
 if "%COMMAND%"=="check" (
-    call :log_success "Docker 环境检查完成"
+    call :log_success "Docker Environmental inspection completed"
     goto :end
 )
 if "%COMMAND%"=="create_dirs" (
@@ -264,7 +264,7 @@ if "%COMMAND%"=="create_dirs" (
     goto :end
 )
 if "%COMMAND%"=="up" (
-    call :log_step "启动服务..."
+    call :log_step "Start the service..."
     call :run_compose up %2 %3 %4 %5 %6 %7 %8 %9
     if not errorlevel 1 (
         timeout /t 5 /nobreak >nul
@@ -274,12 +274,12 @@ if "%COMMAND%"=="up" (
     goto :end
 )
 if "%COMMAND%"=="down" (
-    call :log_step "停止服务..."
+    call :log_step "Stop the service..."
     call :run_compose down %2 %3 %4 %5 %6 %7 %8 %9
     goto :end
 )
 if "%COMMAND%"=="restart" (
-    call :log_step "重启服务..."
+    call :log_step "Restart the service..."
     call :run_compose restart %2 %3 %4 %5 %6 %7 %8 %9
     timeout /t 5 /nobreak >nul
     call :health_check
@@ -294,17 +294,17 @@ if "%COMMAND%"=="logs" (
     goto :end
 )
 if "%COMMAND%"=="build" (
-    call :log_step "构建镜像..."
+    call :log_step "Build an image..."
     call :run_compose build %2 %3 %4 %5 %6 %7 %8 %9
     goto :end
 )
 if "%COMMAND%"=="pull" (
-    call :log_step "拉取镜像..."
+    call :log_step "Pull image..."
     call :run_compose pull %2 %3 %4 %5 %6 %7 %8 %9
     goto :end
 )
 if "%COMMAND%"=="clean" (
-    call :log_step "清理资源..."
+    call :log_step "Clean up resources..."
     call :run_compose down --volumes --remove-orphans
     docker system prune -f
     goto :end
@@ -318,25 +318,25 @@ if "%COMMAND%"=="info" (
     goto :end
 )
 if "%COMMAND%"=="backup" (
-    call :log_step "备份数据..."
+    call :log_step "Backup data..."
     if not exist "backup" mkdir "backup"
     for /f "tokens=2 delims==" %%a in ('wmic OS Get localdatetime /value') do set "dt=%%a"
     set "timestamp=!dt:~0,8!_!dt:~8,6!"
     if exist "data" (
         powershell -Command "Compress-Archive -Path 'data' -DestinationPath 'backup\ntrip_backup_!timestamp!.zip' -Force"
-        call :log_success "数据备份完成: backup\ntrip_backup_!timestamp!.zip"
+        call :log_success "Data backup completed: backup\ntrip_backup_!timestamp!.zip"
     ) else (
-        call :log_warning "数据目录不存在"
+        call :log_warning "Data directory does not exist"
     )
     goto :end
 )
 
-REM 未知命令
-call :log_error "未知命令: %COMMAND%"
+REM Unknown command
+call :log_error "Unknown command: %COMMAND%"
 call :show_help
 
 :end
 goto :eof
 
-REM 脚本入口
+REM Script portal
 call :main %*

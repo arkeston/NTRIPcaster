@@ -706,14 +706,14 @@ function updateMapButtons() {
 }
 
 
-// Coordinates转换函数：WGS84转GCJ02(火星Coordinates系)
+// CoordinatesConversion function:WGS84TurnsGCJ02(MarsCoordinatesSystem)
 function wgs84ToGcj02(lng, lat) {
     const x_pi = 3.14159265358979324 * 3000.0 / 180.0;
     const pi = 3.1415926535897932384626;
-    const a = 6378245.0; // 长半轴
-    const ee = 0.00669342162296594323; // 扁率
+    const a = 6378245.0; // Long Half-Axis
+    const ee = 0.00669342162296594323; // Flatness
     
-    // 判断是否在中国境外
+    // Determine if outside of China
     function outOfChina(lng, lat) {
         return (lng < 72.004 || lng > 137.8347) || (lat < 0.8293 || lat > 55.8271);
     }
@@ -734,7 +734,7 @@ function wgs84ToGcj02(lng, lat) {
         return ret;
     }
     
-    // 如果在中国境外，不进行转换
+    // If outside of China, no conversion
     if (outOfChina(lng, lat)) {
         return [lng, lat];
     }
@@ -755,16 +755,16 @@ function wgs84ToGcj02(lng, lat) {
 function updateMapLocation(latitude, longitude, mountName = null, isInitialMarking = false) {
     if (!currentMap) return;
     
-    // 根据地图类型决定是否进行Coordinates转换
+    // Determine whether to proceed based on the map typeCoordinatesConversion
     let displayLng = longitude;
     let displayLat = latitude;
     
-    // 如果是Gaode Map，需要将WGS84Coordinates转换为GCJ02Coordinates
+    // If yesGaode Map, need toWGS84CoordinatesConvert toGCJ02Coordinates
     if (mapType === 'amap') {
         const converted = wgs84ToGcj02(longitude, latitude);
         displayLng = converted[0];
         displayLat = converted[1];
-        console.log(`[Coordinates转换] WGS84: ${longitude}, ${latitude} -> GCJ02: ${displayLng}, ${displayLat}`);
+        console.log(`[CoordinatesConversion] WGS84: ${longitude}, ${latitude} -> GCJ02: ${displayLng}, ${displayLat}`);
     }
     
     const center = ol.proj.fromLonLat([displayLng, displayLat]);

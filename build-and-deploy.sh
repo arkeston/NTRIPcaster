@@ -1,10 +1,10 @@
 #!/bin/bash
-# NTRIP Caster 保护版本构建和部署脚本
-# 用于构建源码保护的Docker镜像并推送到仓库
+# NTRIP Caster Protect build and deployment scripts
+# Used to build source-protectedDockerMirror and push to repository
 
 set -euo pipefail
 
-# 颜色定义
+# Color definitions
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -13,14 +13,14 @@ PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-# 配置变量
+# Configuration variables
 IMAGE_NAME="ntripcaster"
 IMAGE_TAG="2.2.0"
-REGISTRY_URL="2rtk"  # Docker Hub用户名/组织名
-REGISTRY_NAMESPACE=""  # Docker Hub不需要额外命名空间
+REGISTRY_URL="2rtk"  # Docker HubUsername/Organization name
+REGISTRY_NAMESPACE=""  # Docker HubNo additional namespace required
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 函数定义
+# Function definition
 log_info() {
     echo -e "${GREEN}[INFO]${NC} $1"
 }
@@ -41,7 +41,7 @@ log_success() {
     echo -e "${CYAN}[SUCCESS]${NC} $1"
 }
 
-# 显示横幅
+# Show banner
 show_banner() {
     echo -e "${CYAN}"
     cat << 'EOF'
@@ -53,62 +53,62 @@ show_banner() {
     ╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚═╝     
 EOF
     echo -e "${NC}"
-    echo -e "${GREEN}    NTRIP Caster 保护版本构建部署工具${NC}"
-    echo -e "${BLUE}    版本: ${IMAGE_TAG}${NC}"
+    echo -e "${GREEN}    NTRIP Caster Protected Build Deployment Tool${NC}"
+    echo -e "${BLUE}    Version: ${IMAGE_TAG}${NC}"
     echo
 }
 
-# 检查依赖
+# Check dependencies
 check_dependencies() {
-    log_step "检查构建依赖..."
+    log_step "Check build dependencies..."
     
     local deps=("python3" "docker" "git")
     for dep in "${deps[@]}"; do
         if ! command -v "$dep" &> /dev/null; then
-            log_error "缺少依赖: $dep"
+            log_error "Missing dependencies: $dep"
             exit 1
         fi
     done
     
-    # 检查Docker是否运行
+    # CheckDockerWhether to run
     if ! docker info &> /dev/null; then
-        log_error "Docker未运行或无权限访问"
+        log_error "Dockeris not running or does not have permission to access"
         exit 1
     fi
     
-    log_info "依赖检查通过"
+    log_info "Dependency check passed"
 }
 
-# 构建保护版本的二进制文件
+# Build protected versions of binaries
 build_protected_binary() {
-    log_step "构建源码保护的二进制文件..."
+    log_step "Build source-protected binaries..."
     
     cd "$SCRIPT_DIR"
     
-    # 运行保护构建脚本
+    # Run the protection build script
     if [ -f "build_protected.py" ]; then
         python3 build_protected.py
     else
-        log_error "找不到build_protected.py脚本"
+        log_error "not foundbuild_protected.pyScript"
         exit 1
     fi
     
-    # 检查构建结果
+    # Check build results
     if [ ! -d "dist_protected/ntrip-caster" ]; then
-        log_error "二进制文件构建失败"
+        log_error "Binary build failed"
         exit 1
     fi
     
-    log_success "二进制文件构建完成"
+    log_success "Binary build complete"
 }
 
-# 构建Docker镜像
+# BuildDockerMirror
 build_docker_image() {
-    log_step "构建Docker镜像..."
+    log_step "BuildDockerMirror..."
     
     cd "$SCRIPT_DIR"
     
-    # 构建镜像
+    # Build an image
     local full_image_name="${IMAGE_NAME}:${IMAGE_TAG}"
     
     docker build \
@@ -119,36 +119,36 @@ build_docker_image() {
         --build-arg VCS_REF="$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')" \
         .
     
-    log_success "Docker镜像构建完成: $full_image_name"
+    log_success "DockerMirror build complete: $full_image_name"
 }
 
-# 测试镜像
+# Test image
 test_image() {
-    log_step "测试Docker镜像..."
+    log_step "TestDockerMirror..."
     
     local test_container="ntrip-test-$(date +%s)"
     
-    # 启动测试容器
+    # Start test container
     docker run -d \
         --name "$test_container" \
         -p 12101:2101 \
         -p 15757:5757 \
         "${IMAGE_NAME}:${IMAGE_TAG}"
     
-    # 等待容器启动
+    # Waiting for container to start
     sleep 10
     
-    # 检查容器状态
+    # Check container status
     if docker ps | grep -q "$test_container"; then
-        log_info "容器启动成功，进行健康检查..."
+        log_info "Container started successfully for health check..."
         
-        # 等待健康检查
+        # Waiting for health check
         local max_attempts=30
         local attempt=0
         
         while [ $attempt -lt $max_attempts ]; do
             if docker exec "$test_container" python3 /app/healthcheck.py &>/dev/null; then
-                log_success "健康检查通过"
+                log_success "Health check passed"
                 break
             fi
             
@@ -157,29 +157,29 @@ test_image() {
         done
         
         if [ $attempt -eq $max_attempts ]; then
-            log_warn "健康检查超时，但容器仍在运行"
+            log_warn "The health check timed out but the container is still running"
         fi
     else
-        log_error "容器启动失败"
+        log_error "Failed to start container"
         docker logs "$test_container"
         docker rm -f "$test_container" 2>/dev/null || true
         exit 1
     fi
     
-    # 清理测试容器
+    # Clean Test Container
     docker rm -f "$test_container" 2>/dev/null || true
-    log_success "镜像测试完成"
+    log_success "Mirror Test Complete"
 }
 
-# 推送到仓库
+# Push to Warehouse
 push_to_registry() {
     if [ -z "$REGISTRY_URL" ]; then
-        log_warn "未设置仓库地址，跳过推送步骤"
-        log_info "如需推送，请设置REGISTRY_URL和REGISTRY_NAMESPACE变量"
+        log_warn "Warehouse address not set, skipping push step"
+        log_info "To push, setREGISTRY_URLandREGISTRY_NAMESPACEVariables"
         return
     fi
     
-    log_step "推送镜像到仓库..."
+    log_step "Push image to repository..."
     
     local registry_image
     if [ -n "$REGISTRY_NAMESPACE" ]; then
@@ -188,28 +188,28 @@ push_to_registry() {
         registry_image="${REGISTRY_URL}/${IMAGE_NAME}"
     fi
     
-    # 标记镜像
+    # Marking images
     docker tag "${IMAGE_NAME}:${IMAGE_TAG}" "${registry_image}:${IMAGE_TAG}"
     docker tag "${IMAGE_NAME}:latest" "${registry_image}:latest"
     
-    # 推送镜像
+    # Push image
     docker push "${registry_image}:${IMAGE_TAG}"
     docker push "${registry_image}:latest"
     
-    log_success "镜像推送完成: ${registry_image}:${IMAGE_TAG}"
+    log_success "Mirror push complete: ${registry_image}:${IMAGE_TAG}"
 }
 
-# 生成部署文档
+# Generate deployment documentation
 generate_deployment_docs() {
-    log_step "生成部署文档..."
+    log_step "Generate deployment documentation..."
     
     local docs_dir="deployment_docs"
     mkdir -p "$docs_dir"
     
-    # 生成docker-compose.yml
+    # Builddocker-compose.yml
     cat > "${docs_dir}/docker-compose.yml" << EOF
-# NTRIP Caster 保护版本部署配置
-# 使用方法: docker-compose up -d
+# NTRIP Caster Protection Version Deployment Configuration
+# How to use: docker-compose up -d
 
 version: '3.8'
 
@@ -220,13 +220,13 @@ services:
     hostname: ntrip-caster
     restart: unless-stopped
     ports:
-      - "2101:2101"  # NTRIP服务端口
-      - "5757:5757"  # Web管理端口
+      - "2101:2101"  # NTRIPService Port
+      - "5757:5757"  # WebManagement Port
     volumes:
-      - ntrip-data:/app/data          # 数据持久化
-      - ntrip-logs:/app/logs          # 日志持久化
-      - ntrip-config:/app/config      # 配置文件
-      - /etc/localtime:/etc/localtime:ro  # 时区同步
+      - ntrip-data:/app/data          # Data persistence
+      - ntrip-logs:/app/logs          # Log persistence
+      - ntrip-config:/app/config      # Profile
+      - /etc/localtime:/etc/localtime:ro  # Time zone synchronization
     environment:
       - TZ=Asia/Shanghai
       - NTRIP_CONFIG_FILE=/app/config/config.ini
@@ -267,160 +267,160 @@ networks:
         - subnet: 172.20.0.0/16
 EOF
 
-    # 生成部署脚本
+    # Generate deployment scripts
     cat > "${docs_dir}/deploy.sh" << 'EOF'
 #!/bin/bash
-# NTRIP Caster 一键部署脚本
+# NTRIP Caster One-click deployment scripts
 
 set -e
 
-echo "开始部署NTRIP Caster..."
+echo "Start DeploymentNTRIP Caster..."
 
-# 检查Docker和docker-compose
+# CheckDockeranddocker-compose
 if ! command -v docker &> /dev/null; then
-    echo "错误: 未安装Docker"
+    echo "Error: Not installedDocker"
     exit 1
 fi
 
 if ! command -v docker-compose &> /dev/null; then
-    echo "错误: 未安装docker-compose"
+    echo "Error: Not installeddocker-compose"
     exit 1
 fi
 
-# 拉取最新镜像
-echo "拉取最新镜像..."
+# Pull the latest image
+echo "Pull the latest image..."
 docker-compose pull
 
-# 启动服务
-echo "启动服务..."
+# Start the service
+echo "Start the service..."
 docker-compose up -d
 
-# 等待服务启动
-echo "等待服务启动..."
+# Waiting for service to start
+echo "Waiting for service to start..."
 sleep 30
 
-# 检查服务状态
-echo "检查服务状态..."
+# Check service status
+echo "Check service status..."
 docker-compose ps
 
-echo "部署完成!"
-echo "NTRIP服务地址: http://localhost:2101"
-echo "Web管理界面: http://localhost:5757"
-echo "默认管理员账号: admin/admin123"
+echo "Deployment complete!"
+echo "NTRIPService address: http://localhost:2101"
+echo "Web Admin Interface: http://localhost:5757"
+echo "Default admin account: admin/admin123"
 echo ""
-echo "常用命令:"
-echo "  查看日志: docker-compose logs -f"
-echo "  停止服务: docker-compose down"
-echo "  重启服务: docker-compose restart"
+echo "Common commands:"
+echo "  View Log: docker-compose logs -f"
+echo "  Stop the service: docker-compose down"
+echo "  Restart the service: docker-compose restart"
 EOF
 
     chmod +x "${docs_dir}/deploy.sh"
     
-    # 生成README
+    # BuildREADME
     cat > "${docs_dir}/README.md" << EOF
-# NTRIP Caster 部署指南
+# NTRIP Caster Deployment Guide
 
-## 快速部署
+## Rapid Deployment
 
-1. 确保已安装Docker和docker-compose
-2. 运行部署脚本:
+1. Ensure it is installedDockeranddocker-compose
+2. Run the deployment script:
    \`\`\`bash
    ./deploy.sh
    \`\`\`
 
-## 手动部署
+## Manual Deployment
 
-1. 拉取镜像:
+1. Pull image:
    \`\`\`bash
    docker-compose pull
    \`\`\`
 
-2. 启动服务:
+2. Start the service:
    \`\`\`bash
    docker-compose up -d
    \`\`\`
 
-## 服务访问
+## Service Access
 
-- NTRIP服务: http://localhost:2101
-- Web管理界面: http://localhost:5757
-- 默认管理员账号: admin/admin123
+- NTRIPServices: http://localhost:2101
+- Web Admin Interface: http://localhost:5757
+- Default admin account: admin/admin123
 
-## 配置说明
+## Configuration instructions
 
-配置文件位于容器内的 \`/app/config/config.ini\`，可以通过数据卷进行持久化。
+The profile is inside the container \`/app/config/config.ini\`, which can be persisted through data volumes.
 
-## 数据持久化
+## Data persistence
 
-- 数据目录: \`ntrip-data\` 卷
-- 日志目录: \`ntrip-logs\` 卷  
-- 配置目录: \`ntrip-config\` 卷
+- Data directory: \`ntrip-data\` Volume
+- Log directory: \`ntrip-logs\` Volume  
+- Configuration directory: \`ntrip-config\` Volume
 
-## 常用命令
+## Common commands
 
 \`\`\`bash
-# 查看服务状态
+# View service status
 docker-compose ps
 
-# 查看日志
+# View Log
 docker-compose logs -f
 
-# 重启服务
+# Restart the service
 docker-compose restart
 
-# 停止服务
+# Stop the service
 docker-compose down
 
-# 更新服务
+# Update service
 docker-compose pull && docker-compose up -d
 \`\`\`
 
-## 故障排除
+## Troubleshooting
 
-1. 检查端口是否被占用
-2. 检查Docker服务是否正常运行
-3. 查看容器日志排查问题
+1. Check if the port is occupied
+2. CheckDockerIs the service functioning properly?
+3. View container logs for troubleshooting issues
 
 EOF
 
-    log_success "部署文档生成完成: $docs_dir/"
+    log_success "Deployment Document Generation Complete: $docs_dir/"
 }
 
-# 清理构建文件
+# Clean up build files
 cleanup_build_files() {
-    log_step "清理构建文件..."
+    log_step "Clean up build files..."
     
-    # 可选择性清理，保留重要文件
+    # Optional cleanup, retention of important files
     if [ -d "build_protected" ]; then
         rm -rf build_protected/work build_protected/obfuscated
     fi
     
-    log_info "构建文件清理完成"
+    log_info "Build file cleanup complete"
 }
 
-# 显示使用帮助
+# Show usage help
 show_help() {
     cat << EOF
-NTRIP Caster 保护版本构建部署工具
+NTRIP Caster Protected Build Deployment Tool
 
-用法: $0 [选项]
+Usage: $0 [Options]
 
-选项:
-  --registry-url URL        设置Docker仓库地址
-  --registry-namespace NS   设置仓库命名空间
-  --skip-test              跳过镜像测试
-  --skip-push              跳过推送到仓库
-  --cleanup                构建完成后清理临时文件
-  --help, -h               显示此帮助信息
+Options:
+  --registry-url URL        SettingsDockerWarehouse address
+  --registry-namespace NS   Set repository namespace
+  --skip-test              Skip mirror test
+  --skip-push              Skip push to warehouse
+  --cleanup                Clean up temporary files when build is complete
+  --help, -h               Show this help
 
-示例:
+Example:
   $0 --registry-url registry.example.com --registry-namespace mycompany
   $0 --skip-test --skip-push
 
 EOF
 }
 
-# 解析命令行参数
+# Resolve command line arguments
 parse_args() {
     SKIP_TEST=false
     SKIP_PUSH=false
@@ -453,7 +453,7 @@ parse_args() {
                 exit 0
                 ;;
             *)
-                log_error "未知参数: $1"
+                log_error "Unknown parameter: $1"
                 show_help
                 exit 1
                 ;;
@@ -461,81 +461,81 @@ parse_args() {
     done
 }
 
-# 主函数
+# Main function
 main() {
-    # 解析参数
+    # Parse parameters
     parse_args "$@"
     
-    # 显示横幅
+    # Show banner
     show_banner
     
-    # 显示配置信息
-    log_info "构建配置:"
-    echo "  镜像名称: ${IMAGE_NAME}:${IMAGE_TAG}"
-    echo "  仓库地址: ${REGISTRY_URL:-'未设置'}"
-    echo "  命名空间: ${REGISTRY_NAMESPACE:-'未设置'}"
-    echo "  跳过测试: ${SKIP_TEST}"
-    echo "  跳过推送: ${SKIP_PUSH}"
+    # Show configuration information
+    log_info "Build configuration:"
+    echo "  Mirror Name: ${IMAGE_NAME}:${IMAGE_TAG}"
+    echo "  Warehouse address: ${REGISTRY_URL:-'Not set'}"
+    echo "  Namespace: ${REGISTRY_NAMESPACE:-'Not set'}"
+    echo "  Skip test: ${SKIP_TEST}"
+    echo "  Skip push: ${SKIP_PUSH}"
     echo
     
     try {
-        # 1. 检查依赖
+        # 1. Check dependencies
         check_dependencies
         
-        # 2. 构建保护版本的二进制文件
+        # 2. Build protected versions of binaries
         build_protected_binary
         
-        # 3. 构建Docker镜像
+        # 3. BuildDockerMirror
         build_docker_image
         
-        # 4. 测试镜像（可选）
+        # 4. Test image (optional)
         if [ "$SKIP_TEST" = false ]; then
             test_image
         fi
         
-        # 5. 推送到仓库（可选）
+        # 5. Push to Warehouse (optional)
         if [ "$SKIP_PUSH" = false ]; then
             push_to_registry
         fi
         
-        # 6. 生成部署文档
+        # 6. Generate deployment documentation
         generate_deployment_docs
         
-        # 7. 清理构建文件（可选）
+        # 7. Clean up build files (optional)
         if [ "$CLEANUP" = true ]; then
             cleanup_build_files
         fi
         
         echo
-        log_success "构建部署完成!"
+        log_success "Build Deployment Complete!"
         echo
-        log_info "下一步:"
-        echo "  1. 查看部署文档: deployment_docs/README.md"
-        echo "  2. 使用部署脚本: cd deployment_docs && ./deploy.sh"
+        log_info "Next:"
+        echo "  1. View deployment documentation: deployment_docs/README.md"
+        echo "  2. Use deployment scripts: cd deployment_docs && ./deploy.sh"
         if [ -n "$REGISTRY_URL" ]; then
-            echo "  3. 分发镜像: ${REGISTRY_URL}/${REGISTRY_NAMESPACE:+${REGISTRY_NAMESPACE}/}${IMAGE_NAME}:${IMAGE_TAG}"
+            echo "  3. Distribute images: ${REGISTRY_URL}/${REGISTRY_NAMESPACE:+${REGISTRY_NAMESPACE}/}${IMAGE_NAME}:${IMAGE_TAG}"
         fi
         echo
         
     } catch {
-        log_error "构建失败: $1"
+        log_error "Build failed: $1"
         exit 1
     }
 }
 
-# Bash错误处理函数
+# BashError Handling Functions
 try() {
     "$@"
 }
 
 catch() {
     case $? in
-        0) ;; # 成功，什么都不做
-        *) "$@" ;; # 失败，执行catch块
+        0) ;; # Success, doing nothing
+        *) "$@" ;; # failed, executecatchblock
     esac
 }
 
-# 脚本入口
+# Script portal
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     main "$@"
 fi

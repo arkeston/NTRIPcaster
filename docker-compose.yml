@@ -10,14 +10,14 @@ services:
     hostname: ntrip-caster
     restart: unless-stopped
     ports:
-      - "2101:2101"  # NTRIP服务端口
-      - "5757:5757"  # Web管理端口
+      - "2101:2101"  # NTRIPService Port
+      - "5757:5757"  # WebManagement Port
     volumes:
-      - ntrip-data:/app/data          # 数据持久化
-      - ntrip-logs:/app/logs          # 日志持久化
-      - ntrip-config:/app/config      # 配置文件目录
-      - /etc/localtime:/etc/localtime:ro  # 时区同步
-    # user: "1000:1000"  # 暂时注释，让容器以root启动来设置权限
+      - ntrip-data:/app/data          # Data persistence
+      - ntrip-logs:/app/logs          # Log persistence
+      - ntrip-config:/app/config      # Profile directory
+      - /etc/localtime:/etc/localtime:ro  # Time zone synchronization
+    # user: "1000:1000"  # Temporarily annotate the container withrootLaunch to set permissions
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
@@ -56,7 +56,7 @@ services:
           memory: 256M
           cpus: '0.5'
 
-  # Nginx反向代理（可选）
+  # NginxReverse proxy (optional)
   nginx:
     image: nginx:1.25-alpine
     container_name: ntrip-nginx
@@ -97,9 +97,9 @@ services:
       - /var/cache/nginx:noexec,nosuid,size=100m
       - /var/run:noexec,nosuid,size=10m
     profiles:
-      - nginx  # 使用 --profile nginx 启用
+      - nginx  # Use --profile nginx Enable
 
-  # 监控服务（可选）
+  # Monitoring services (optional)
   prometheus:
     image: prom/prometheus:v2.47.0
     container_name: ntrip-prometheus
@@ -141,7 +141,7 @@ services:
       - no-new-privileges:true
     user: "65534:65534"  # nobody user
     profiles:
-      - monitoring  # 使用 --profile monitoring 启用
+      - monitoring  # Use --profile monitoring Enable
 
   grafana:
     image: grafana/grafana:10.1.0
@@ -185,9 +185,9 @@ services:
       - no-new-privileges:true
     user: "472:472"  # grafana user
     profiles:
-      - monitoring  # 使用 --profile monitoring 启用
+      - monitoring  # Use --profile monitoring Enable
 
-  # Redis缓存服务（可选）
+  # RedisCaching service (optional)
   redis:
     image: redis:7.2-alpine
     container_name: ntrip-redis
@@ -218,7 +218,7 @@ services:
     security_opt:
       - no-new-privileges:true
     profiles:
-      - cache  # 使用 --profile cache 启用
+      - cache  # Use --profile cache Enable
 
 networks:
   ntrip-network:
@@ -234,7 +234,7 @@ networks:
       com.docker.network.driver.mtu: 1500
 
 volumes:
-  # 应用数据卷
+  # Apply Data Volume
   ntrip-data:
     name: ntrip-data
     driver: local
@@ -245,7 +245,7 @@ volumes:
     name: ntrip-config
     driver: local
   
-  # 监控数据卷
+  # Monitoring data volumes
   prometheus-data:
     name: prometheus-data
     driver: local
@@ -256,7 +256,7 @@ volumes:
     name: grafana-logs
     driver: local
   
-  # Nginx数据卷
+  # NginxData Volume
   nginx-cache:
     name: nginx-cache
     driver: local
@@ -264,7 +264,7 @@ volumes:
     name: nginx-logs
     driver: local
   
-  # Redis数据卷
+  # RedisData Volume
   redis-data:
     name: redis-data
     driver: local

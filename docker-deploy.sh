@@ -1,10 +1,10 @@
 #!/bin/bash
-# NTRIP Caster Docker部署脚本 v2.1.8
-# 支持开发、测试、生产环境的完整部署解决方案
+# NTRIP Caster DockerDeployment script v2.1.8
+# Full deployment solution supporting development, testing, production environment
 
 set -euo pipefail
 
-# 颜色定义
+# Color definitions
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -13,7 +13,7 @@ PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-# 配置变量
+# Configuration variables
 IMAGE_NAME="ntrip-caster"
 IMAGE_TAG="2.1.8"
 CONTAINER_NAME="ntrip-caster"
@@ -23,7 +23,7 @@ ENVIRONMENT="development"
 PROFILES=""
 COMPOSE_FILES="-f docker-compose.yml"
 
-# 函数定义
+# Function definition
 log_info() {
     echo -e "${GREEN}[INFO]${NC} $1"
 }
@@ -50,7 +50,7 @@ log_success() {
     echo -e "${CYAN}[SUCCESS]${NC} $1"
 }
 
-# 显示横幅
+# Show banner
 show_banner() {
     echo -e "${CYAN}"
     cat << 'EOF'
@@ -62,12 +62,12 @@ show_banner() {
     ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝
 EOF
     echo -e "${NC}"
-    echo -e "${GREEN}    NTRIP Caster Docker 部署脚本 v2.1.8${NC}"
-    echo -e "${BLUE}    环境: ${ENVIRONMENT} | 配置文件: ${COMPOSE_FILES}${NC}"
+    echo -e "${GREEN}    NTRIP Caster Docker Deployment script v2.1.8${NC}"
+    echo -e "${BLUE}    Environment: ${ENVIRONMENT} | Profile: ${COMPOSE_FILES}${NC}"
     echo
 }
 
-# 解析命令行参数
+# Resolve command line arguments
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -93,7 +93,7 @@ parse_args() {
         esac
     done
     
-    # 根据环境设置compose文件
+    # Based on environment settingscomposeFiles
     case "$ENVIRONMENT" in
         "production"|"prod")
             COMPOSE_FILES="-f docker-compose.yml -f docker-compose.prod.yml"
@@ -108,70 +108,70 @@ parse_args() {
             ENVIRONMENT="testing"
             ;;
         *)
-            log_warn "未知环境: $ENVIRONMENT，使用默认开发环境"
+            log_warn "Unknown environment: $ENVIRONMENT, using default development environment"
             ENVIRONMENT="development"
             COMPOSE_FILES="-f docker-compose.yml -f docker-compose.override.yml"
             ;;
     esac
     
-    log_debug "环境: $ENVIRONMENT"
-    log_debug "Compose文件: $COMPOSE_FILES"
+    log_debug "Environment: $ENVIRONMENT"
+    log_debug "ComposeFiles: $COMPOSE_FILES"
     log_debug "Profiles: $PROFILES"
 }
 
-# 检查Docker是否安装
+# CheckDockerIs it installed?
 check_docker() {
-    log_step "检查Docker环境..."
+    log_step "CheckDockerEnvironment..."
     
     if ! command -v docker &> /dev/null; then
-        log_error "Docker未安装，请先安装Docker"
-        echo "安装命令:"
+        log_error "Dockeris not installed, please install it firstDocker"
+        echo "Install command:"
         echo "  Ubuntu/Debian: curl -fsSL https://get.docker.com | sh"
         echo "  CentOS/RHEL: curl -fsSL https://get.docker.com | sh"
         echo "  macOS: brew install docker"
-        echo "  Windows: 下载Docker Desktop"
+        echo "  Windows: DownloadDocker Desktop"
         exit 1
     fi
     
-    # 检查Docker Compose (优先使用docker compose插件)
+    # CheckDocker Compose (Priority usedocker composePlugin)
     if docker compose version &> /dev/null; then
         DOCKER_COMPOSE_CMD="docker compose"
-        log_debug "使用Docker Compose插件"
+        log_debug "UseDocker ComposePlugin"
     elif command -v docker-compose &> /dev/null; then
         DOCKER_COMPOSE_CMD="docker-compose"
-        log_debug "使用独立的docker-compose"
+        log_debug "Use standalonedocker-compose"
     else
-        log_error "Docker Compose未安装，请先安装Docker Compose"
-        echo "安装命令:"
-        echo "  插件方式: docker plugin install docker/compose"
-        echo "  独立安装: sudo curl -L \"https://github.com/docker/compose/releases/latest/download/docker-compose-\$(uname -s)-\$(uname -m)\" -o /usr/local/bin/docker-compose"
+        log_error "Docker Composeis not installed, please install it firstDocker Compose"
+        echo "Install command:"
+        echo "  Plug-in method: docker plugin install docker/compose"
+        echo "  Standalone installation: sudo curl -L \"https://github.com/docker/compose/releases/latest/download/docker-compose-\$(uname -s)-\$(uname -m)\" -o /usr/local/bin/docker-compose"
         echo "           sudo chmod +x /usr/local/bin/docker-compose"
         exit 1
     fi
     
-    # 检查Docker守护进程是否运行
+    # CheckDockerWhether the daemon is running
     if ! docker info &> /dev/null; then
-        log_error "Docker守护进程未运行，请启动Docker服务"
-        echo "启动命令:"
+        log_error "DockerThe daemon is not running, please startDockerServices"
+        echo "Start command:"
         echo "  systemd: sudo systemctl start docker"
-        echo "  macOS/Windows: 启动Docker Desktop"
+        echo "  macOS/Windows: StartDocker Desktop"
         exit 1
     fi
     
-    # 显示版本信息
+    # Show version information
     local docker_version=$(docker --version | cut -d' ' -f3 | cut -d',' -f1)
     local compose_version=$($DOCKER_COMPOSE_CMD version --short 2>/dev/null || echo "unknown")
     
-    log_info "Docker环境检查通过"
-    log_debug "Docker版本: $docker_version"
-    log_debug "Compose版本: $compose_version"
+    log_info "DockerEnvironmental inspection passed"
+    log_debug "DockerVersion: $docker_version"
+    log_debug "ComposeVersion: $compose_version"
 }
 
-# 创建必要的目录
+# Create necessary directories
 create_directories() {
-    log_step "创建必要的目录结构..."
+    log_step "Create the necessary directory structure..."
     
-    # 基础目录
+    # Base Directory
     local dirs=(
         "data"
         "logs"
@@ -191,61 +191,61 @@ create_directories() {
     for dir in "${dirs[@]}"; do
         if [[ ! -d "$dir" ]]; then
             mkdir -p "$dir"
-            log_debug "创建目录: $dir"
+            log_debug "Create directory:$dir"
         fi
     done
     
-    # 设置目录权限
+    # Set directory permissions
     chmod 755 data logs config
     chmod 700 secrets
     
-    # 复制配置文件
+    # Copy profile
     if [[ ! -f "config/config.ini" && -f "config.ini" ]]; then
         cp config.ini config/config.ini
-        log_info "配置文件已复制到 config/config.ini"
+        log_info "Profile copied to config/config.ini"
     fi
     
-    # 创建环境配置文件
+    # Create an environment profile
     if [[ ! -f ".env.${ENVIRONMENT}" ]]; then
         create_env_file
     fi
     
-    log_success "目录结构创建完成"
+    log_success "Directory structure creation completed"
 }
 
-# 创建环境配置文件
+# Create an environment profile
 create_env_file() {
-    log_step "创建环境配置文件..."
+    log_step "Create an environment profile..."
     
     cat > ".env.${ENVIRONMENT}" << EOF
-# ${ENVIRONMENT} 环境配置
+# ${ENVIRONMENT} Environment configuration
 COMPOSE_PROJECT_NAME=ntrip-${ENVIRONMENT}
 COMPOSE_FILE=${COMPOSE_FILES// /,}
 ENVIRONMENT=${ENVIRONMENT}
 
-# 应用配置
+# App Configuration
 NTRIP_HOST=0.0.0.0
 NTRIP_PORT=2101
 WEB_HOST=0.0.0.0
 WEB_PORT=5757
 
-# 日志配置
+# Log configuration
 LOG_LEVEL=INFO
 LOG_FORMAT=json
 
-# 数据库配置
+# Database configuration
 DATABASE_PATH=/app/data/2rtk.db
 
-# 时区配置
+# Time zone configuration
 TZ=Asia/Shanghai
 EOF
     
-    log_info "环境配置文件已创建: .env.${ENVIRONMENT}"
+    log_info "Environment profile created: .env.${ENVIRONMENT}"
 }
 
-# 创建Nginx配置
+# CreateNginxConfiguration
 create_nginx_config() {
-    log_step "创建Nginx配置..."
+    log_step "CreateNginxConfiguration..."
     
     cat > nginx/nginx.conf << 'EOF'
 user nginx;
@@ -299,14 +299,14 @@ server {
     listen 80;
     server_name _;
     
-    # 安全头
+    # Safety header
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-XSS-Protection "1; mode=block" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "no-referrer-when-downgrade" always;
     add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
     
-    # Web管理界面
+    # Web Admin Interface
     location / {
         proxy_pass http://ntrip-caster:5757;
         proxy_set_header Host $host;
@@ -314,14 +314,14 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         
-        # WebSocket支持
+        # WebSocketSupport
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
         proxy_read_timeout 86400;
     }
     
-    # 健康检查
+    # Health Check
     location /health {
         access_log off;
         return 200 "healthy\n";
@@ -329,7 +329,7 @@ server {
     }
 }
 
-# NTRIP服务代理（可选）
+# NTRIPService proxy (optional)
 stream {
     upstream ntrip_backend {
         server ntrip-caster:2101;
@@ -345,12 +345,12 @@ stream {
 }
 EOF
 
-    log_info "Nginx配置创建完成"
+    log_info "NginxConfiguration creation complete"
 }
 
-# 创建监控配置
+# Create monitoring configuration
 create_monitoring_config() {
-    log_step "创建监控配置..."
+    log_step "Create monitoring configuration..."
     
     cat > monitoring/prometheus.yml << 'EOF'
 global:
@@ -385,190 +385,190 @@ datasources:
     isDefault: true
 EOF
 
-    log_info "监控配置创建完成"
+    log_info "Monitoring configuration creation completed"
 }
 
-# 构建镜像
+# Build an image
 build_image() {
-    log_step "构建Docker镜像..."
+    log_step "BuildDockerMirror..."
     
     if [ -f "Dockerfile" ]; then
         docker build -t $IMAGE_NAME:$IMAGE_TAG .
         docker tag $IMAGE_NAME:$IMAGE_TAG $IMAGE_NAME:latest
-        log_success "镜像构建完成: $IMAGE_NAME:$IMAGE_TAG"
+        log_success "Mirror build complete: $IMAGE_NAME:$IMAGE_TAG"
     else
-        log_info "未找到Dockerfile，使用docker-compose构建..."
+        log_info "not foundDockerfile, usingdocker-composeBuild..."
         $DOCKER_COMPOSE_CMD $COMPOSE_FILES build
-        log_success "镜像构建完成"
+        log_success "Mirror build complete"
     fi
 }
 
-# 启动服务
+# Start the service
 start_services() {
-    log_step "启动服务..."
+    log_step "Start the service..."
     
-    # 基础服务
+    # Basic Services
     $DOCKER_COMPOSE_CMD $COMPOSE_FILES $PROFILES up -d ntrip-caster
     
-    # 等待服务启动
-    log_info "等待服务启动..."
+    # Waiting for service to start
+    log_info "Waiting for service to start..."
     sleep 10
     
-    # 检查服务状态
+    # Check service status
     if $DOCKER_COMPOSE_CMD $COMPOSE_FILES ps | grep -q "Up"; then
-        log_info "NTRIP Caster服务启动成功"
+        log_info "NTRIP CasterService started successfully"
         check_health
     else
-        log_error "服务启动失败"
+        log_error "Service start failed"
         $DOCKER_COMPOSE_CMD $COMPOSE_FILES logs ntrip-caster
         exit 1
     fi
 }
 
-# 启动完整服务（包括Nginx和监控）
+# Start full service (incl.Nginxand monitoring)
 start_full_services() {
-    log_step "启动完整服务栈..."
+    log_step "Start the full service stack..."
     
     $DOCKER_COMPOSE_CMD $COMPOSE_FILES --profile nginx --profile monitoring up -d
     
-    # 等待服务启动
-    log_info "等待服务启动..."
+    # Waiting for service to start
+    log_info "Waiting for service to start..."
     sleep 15
     
     check_health
     show_info
-    log_success "完整服务栈启动完成"
+    log_success "Full service stack startup complete"
 }
 
-# 停止服务
+# Stop the service
 stop_services() {
-    log_step "停止服务..."
+    log_step "Stop the service..."
     
     $DOCKER_COMPOSE_CMD $COMPOSE_FILES $PROFILES down
     
-    log_success "服务已停止"
+    log_success "Service stopped"
 }
 
-# 清理资源
+# Clean up resources
 clean_resources() {
-    log_step "清理Docker资源..."
+    log_step "CleanupDockerResources..."
     
-    # 停止并删除容器
+    # Stopping and deleting containers
     $DOCKER_COMPOSE_CMD $COMPOSE_FILES down -v --remove-orphans
     
-    # 删除镜像
+    # Delete Mirror
     docker rmi $IMAGE_NAME:$IMAGE_TAG $IMAGE_NAME:latest 2>/dev/null || true
     
-    # 清理未使用的资源
+    # Clean up unused resources
     docker system prune -f
     docker volume prune -f
     
-    log_success "资源清理完成"
+    log_success "Resource cleanup complete"
 }
 
-# 查看日志
+# View Log
 view_logs() {
     $DOCKER_COMPOSE_CMD $COMPOSE_FILES logs -f ntrip-caster
 }
 
-# 查看状态
+# Check status
 view_status() {
-    echo "=== Docker Compose状态 ==="
+    echo "=== Docker ComposeStatus ==="
     $DOCKER_COMPOSE_CMD $COMPOSE_FILES ps
     echo
-    echo "=== 容器资源使用 ==="
+    echo "=== Container Resource Usage ==="
     docker stats --no-stream
     echo
-    echo "=== 服务健康状态 ==="
+    echo "=== Service Health Status ==="
     if docker ps --format "table {{.Names}}\t{{.Status}}" | grep -q "ntrip-caster.*Up"; then
         if $DOCKER_COMPOSE_CMD $COMPOSE_FILES exec -T ntrip-caster curl -f http://localhost:5757/ >/dev/null 2>&1; then
-            echo "✓ Web服务正常"
+            echo "✓ Web Service OK"
         else
-            echo "✗ Web服务异常"
+            echo "✗ WebService exception"
         fi
     else
-        echo "✗ NTRIP Caster服务未运行"
+        echo "✗ NTRIP CasterService is not running"
     fi
 }
 
-# 显示帮助信息
+# Show help
 show_help() {
-    echo "NTRIP Caster Docker部署脚本 v2.1.8"
+    echo "NTRIP Caster DockerDeployment script v2.1.8"
     echo
-    echo "用法: $0 [选项] [命令] [参数]"
+    echo "Usage: $0 [Options] [Command] [Parameters]"
     echo
-    echo "选项:"
-    echo "  --env, --environment ENV  指定环境 (development|testing|production)"
-    echo "  --profile PROFILE         启用指定的compose profile"
-    echo "  --debug                   启用调试模式"
-    echo "  --help, -h               显示帮助信息"
+    echo "Options:"
+    echo "  --env, --environment ENV  Designated environment (development|testing|production)"
+    echo "  --profile PROFILE         Enable specifiedcompose profile"
+    echo "  --debug                   Enable debug mode"
+    echo "  --help, -h               Show help"
     echo
-    echo "命令:"
-    echo "  build     - 构建Docker镜像"
-    echo "  start     - 启动基础服务"
-    echo "  full      - 启动完整服务（包括Nginx和监控）"
-    echo "  stop      - 停止服务"
-    echo "  restart   - 重启服务"
-    echo "  logs      - 查看日志"
-    echo "  status    - 查看状态"
-    echo "  health    - 检查服务健康状态"
-    echo "  info      - 显示服务信息"
-    echo "  backup    - 备份数据"
-    echo "  restore   - 恢复数据 (需要指定备份路径)"
-    echo "  update    - 更新服务"
-    echo "  clean     - 清理资源"
-    echo "  help      - 显示帮助信息"
+    echo "Command:"
+    echo "  build     - BuildDockerMirror"
+    echo "  start     - Start basic services"
+    echo "  full      - Start full service (incl.Nginxand monitoring)"
+    echo "  stop      - Stop the service"
+    echo "  restart   - Restart the service"
+    echo "  logs      - View Log"
+    echo "  status    - Check status"
+    echo "  health    - Check service health"
+    echo "  info      - Show service information"
+    echo "  backup    - Backup data"
+    echo "  restore   - Recover data (The backup path needs to be specified)"
+    echo "  update    - Update service"
+    echo "  clean     - Clean up resources"
+    echo "  help      - Show help"
     echo
-    echo "示例:"
-    echo "  $0 --env production build && $0 start    # 生产环境构建并启动"
-    echo "  $0 --profile nginx --profile monitoring full  # 启动完整服务栈"
-    echo "  $0 --debug logs                          # 调试模式查看日志"
-    echo "  $0 backup                                # 备份数据"
-    echo "  $0 restore ./backup/20231201_120000     # 恢复数据"
+    echo "Example:"
+    echo "  $0 --env production build && $0 start    # Production build and launch"
+    echo "  $0 --profile nginx --profile monitoring full  # Start the full service stack"
+    echo "  $0 --debug logs                          # Debug Mode View Log"
+    echo "  $0 backup                                # Backup data"
+    echo "  $0 restore ./backup/20231201_120000     # Recover data"
     echo
-    echo "环境说明:"
-    echo "  development - 开发环境，包含调试工具"
-    echo "  testing     - 测试环境，基础配置"
-    echo "  production  - 生产环境，优化配置"
+    echo "Environmental description:"
+    echo "  development - Development environment, including debugging tools"
+    echo "  testing     - Test environment, basic configuration"
+    echo "  production  - Production environment, optimized configuration"
 }
 
-# 检查服务健康状态
+# Check service health
 check_health() {
-    log_info "检查服务健康状态..."
+    log_info "Check service health..."
     
     local services=("ntrip-caster" "ntrip-nginx" "ntrip-prometheus" "ntrip-grafana")
     local healthy=true
     
     for service in "${services[@]}"; do
         if $DOCKER_COMPOSE_CMD $COMPOSE_FILES $PROFILES ps --format "table {{.Service}}\t{{.Status}}" | grep -q "$service.*healthy"; then
-            log_success "✓ $service: 健康"
+            log_success "✓ $service: Health"
         elif $DOCKER_COMPOSE_CMD $COMPOSE_FILES $PROFILES ps --format "table {{.Service}}\t{{.Status}}" | grep -q "$service.*Up"; then
-            log_warn "⚠ $service: 运行中但健康检查未通过"
+            log_warn "⚠ $service: Running but failed health check"
             healthy=false
         else
-            log_error "✗ $service: 未运行"
+            log_error "✗ $service: Not running"
             healthy=false
         fi
     done
     
     if [ "$healthy" = true ]; then
-        log_success "所有服务运行正常"
+        log_success "All services are up and running"
     else
-        log_warn "部分服务存在问题，请检查日志"
+        log_warn "Some services have problems, please check the logs"
     fi
 }
 
-# 显示服务信息
+# Show service information
 show_info() {
-    log_info "NTRIP Caster 服务信息:"
+    log_info "NTRIP Caster Service Information:"
     echo
-    echo "${BLUE}环境:${NC} $ENVIRONMENT"
-    echo "${BLUE}配置文件:${NC} $COMPOSE_FILES"
-    echo "${BLUE}项目名称:${NC} ${CONTAINER_NAME}"
+    echo "${BLUE}Environment:${NC} $ENVIRONMENT"
+    echo "${BLUE}Profile:${NC} $COMPOSE_FILES"
+    echo "${BLUE}Project name:${NC} ${CONTAINER_NAME}"
     echo
-    echo "${BLUE}服务端点:${NC}"
+    echo "${BLUE}Service endpoint:${NC}"
     echo "  • NTRIP Caster: http://localhost:2101"
-    echo "  • Web界面: http://localhost:5757"
+    echo "  • WebInterface: http://localhost:5757"
     echo "  • Prometheus: http://localhost:9090"
     echo "  • Grafana: http://localhost:3000"
     if [ "$ENVIRONMENT" = "development" ]; then
@@ -579,27 +579,27 @@ show_info() {
     echo
     
     if $DOCKER_COMPOSE_CMD $COMPOSE_FILES ps >/dev/null 2>&1; then
-        echo "${BLUE}服务状态:${NC}"
+        echo "${BLUE}Service Status:${NC}"
         $DOCKER_COMPOSE_CMD $COMPOSE_FILES ps
     fi
 }
 
-# 备份数据
+# Backup data
 backup_data() {
-    log_info "备份数据..."
+    log_info "Backup data..."
     
     local backup_dir="./backup/$(date +%Y%m%d_%H%M%S)"
     mkdir -p "$backup_dir"
     
-    # 备份配置文件
-    log_info "备份配置文件..."
+    # Backup profile
+    log_info "Backup profile..."
     cp -r config/ "$backup_dir/" 2>/dev/null || true
     cp -r nginx/ "$backup_dir/" 2>/dev/null || true
     cp -r monitoring/ "$backup_dir/" 2>/dev/null || true
     cp .env.* "$backup_dir/" 2>/dev/null || true
     
-    # 备份数据卷
-    log_info "备份数据卷..."
+    # Backup data volumes
+    log_info "Backup data volumes..."
     if docker volume ls | grep -q "ntrip.*data"; then
         docker run --rm -v "ntrip-data:/data" -v "$(pwd)/$backup_dir:/backup" alpine tar czf /backup/ntrip-data.tar.gz -C /data .
     fi
@@ -612,72 +612,72 @@ backup_data() {
         docker run --rm -v "grafana-data:/data" -v "$(pwd)/$backup_dir:/backup" alpine tar czf /backup/grafana-data.tar.gz -C /data .
     fi
     
-    log_success "备份完成: $backup_dir"
+    log_success "Backup complete: $backup_dir"
 }
 
-# 恢复数据
+# Recover data
 restore_data() {
     local backup_path="$1"
     
     if [ -z "$backup_path" ] || [ ! -d "$backup_path" ]; then
-        log_error "请指定有效的备份目录路径"
+        log_error "Please specify a valid backup directory path"
         exit 1
     fi
     
-    log_info "从 $backup_path 恢复数据..."
+    log_info "From $backup_path Recover data..."
     
-    # 停止服务
+    # Stop the service
     $DOCKER_COMPOSE_CMD $COMPOSE_FILES down
     
-    # 恢复配置文件
+    # Restore profile
     if [ -d "$backup_path/config" ]; then
-        log_info "恢复配置文件..."
+        log_info "Restore profile..."
         cp -r "$backup_path/config/" ./ 2>/dev/null || true
     fi
     
-    # 恢复数据卷
+    # Recover data volumes
     if [ -f "$backup_path/ntrip-data.tar.gz" ]; then
-        log_info "恢复NTRIP数据..."
+        log_info "RecoveryNTRIPData..."
         docker run --rm -v "ntrip-data:/data" -v "$(realpath $backup_path):/backup" alpine tar xzf /backup/ntrip-data.tar.gz -C /data
     fi
     
     if [ -f "$backup_path/prometheus-data.tar.gz" ]; then
-        log_info "恢复Prometheus数据..."
+        log_info "RecoveryPrometheusData..."
         docker run --rm -v "prometheus-data:/data" -v "$(realpath $backup_path):/backup" alpine tar xzf /backup/prometheus-data.tar.gz -C /data
     fi
     
     if [ -f "$backup_path/grafana-data.tar.gz" ]; then
-        log_info "恢复Grafana数据..."
+        log_info "RecoveryGrafanaData..."
         docker run --rm -v "grafana-data:/data" -v "$(realpath $backup_path):/backup" alpine tar xzf /backup/grafana-data.tar.gz -C /data
     fi
     
-    log_success "数据恢复完成"
+    log_success "Data recovery complete"
 }
 
-# 更新服务
+# Update service
 update_services() {
-    log_info "更新服务..."
+    log_info "Update service..."
     
-    # 拉取最新镜像
-    log_info "拉取最新镜像..."
+    # Pull the latest image
+    log_info "Pull the latest image..."
     $DOCKER_COMPOSE_CMD $COMPOSE_FILES pull
     
-    # 重新构建本地镜像
-    log_info "重新构建本地镜像..."
+    # Rebuild local image
+    log_info "Rebuild local image..."
     $DOCKER_COMPOSE_CMD $COMPOSE_FILES build --no-cache
     
-    # 重启服务
-    log_info "重启服务..."
+    # Restart the service
+    log_info "Restart the service..."
     $DOCKER_COMPOSE_CMD $COMPOSE_FILES up -d
     
-    # 清理旧镜像
-    log_info "清理未使用的镜像..."
+    # Clean up old images
+    log_info "Purge unused mirrors..."
     docker image prune -f
     
-    log_success "服务更新完成"
+    log_success "Service update complete"
 }
 
-# 主函数
+# Main function
 main() {
     show_banner
     parse_args "$@"
@@ -747,7 +747,7 @@ main() {
             show_help
             ;;
         "")
-            log_info "开始自动部署..."
+            log_info "Start Automated Deployment..."
             check_docker
             create_directories
             create_nginx_config
@@ -757,27 +757,27 @@ main() {
             
             echo
             echo "==========================================="
-            echo "    NTRIP Caster Docker部署完成"
+            echo "    NTRIP Caster DockerDeployment complete"
             echo "==========================================="
             echo
-            echo "服务地址:"
-            echo "  - NTRIP服务: $(hostname -I | awk '{print $1}'):2101"
-            echo "  - Web管理: http://$(hostname -I | awk '{print $1}'):5757"
+            echo "Service address:"
+            echo "  - NTRIPServices: $(hostname -I | awk '{print $1}'):2101"
+            echo "  - WebManagement: http://$(hostname -I | awk '{print $1}'):5757"
             echo
-            echo "管理命令:"
-            echo "  - 查看状态: $0 status"
-            echo "  - 查看日志: $0 logs"
-            echo "  - 停止服务: $0 stop"
-            echo "  - 重启服务: $0 restart"
+            echo "Administrative Commands:"
+            echo "  - Check status: $0 status"
+            echo "  - View Log: $0 logs"
+            echo "  - Stop the service: $0 stop"
+            echo "  - Restart the service: $0 restart"
             echo
             ;;
         *)
-            log_error "未知命令: $1"
+            log_error "Unknown command: $1"
             show_help
             exit 1
             ;;
     esac
 }
 
-# 执行主函数
+# Execute main function
 main "$@"

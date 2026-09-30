@@ -1,10 +1,10 @@
-# Grafana 仪表板配置
-# 自动加载仪表板文件
+# Grafana Dashboard configuration
+# Automatically load dashboard files
 
 apiVersion: 1
 
 providers:
-  # NTRIP Caster 仪表板
+  # NTRIP Caster Dashboard
   - name: 'ntrip-dashboards'
     orgId: 1
     folder: 'NTRIP Caster'
@@ -15,7 +15,7 @@ providers:
     options:
       path: /etc/grafana/provisioning/dashboards/ntrip
   
-  # 系统监控仪表板
+  # System Monitoring Dashboard
   - name: 'system-dashboards'
     orgId: 1
     folder: 'System Monitoring'
@@ -26,7 +26,7 @@ providers:
     options:
       path: /etc/grafana/provisioning/dashboards/system
   
-  # 容器监控仪表板
+  # Container Monitoring Dashboard
   - name: 'container-dashboards'
     orgId: 1
     folder: 'Container Monitoring'
@@ -37,7 +37,7 @@ providers:
     options:
       path: /etc/grafana/provisioning/dashboards/containers
   
-  # 网络监控仪表板
+  # Network Monitoring Dashboard
   - name: 'network-dashboards'
     orgId: 1
     folder: 'Network Monitoring'
@@ -48,7 +48,7 @@ providers:
     options:
       path: /etc/grafana/provisioning/dashboards/network
   
-  # 应用监控仪表板
+  # App Monitoring Dashboard
   - name: 'application-dashboards'
     orgId: 1
     folder: 'Application Monitoring'
