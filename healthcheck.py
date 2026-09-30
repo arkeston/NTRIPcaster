@@ -39,13 +39,13 @@ class HealthChecker:
         try:
             with urllib.request.urlopen('http://localhost:5757/health', timeout=5) as response:
                 if response.status == 200:
-                    return True, "Web服务正常"
+                    return True, "Web Service OK"
                 else:
-                    return False, f"Web服务返回状态码: {response.status}"
+                    return False, f"Web service return status code:{response.status}"
         except urllib.error.URLError as e:
-            return False, f"Web服务连接失败: {e}"
+            return False, f"Web service connection failed:{e}"
         except Exception as e:
-            return False, f"Web服务检查异常: {e}"
+            return False, f"Web service check exception:{e}"
     
     def check_ntrip_service(self) -> Tuple[bool, str]:
         """检查NTRIP服务端口"""
@@ -56,11 +56,11 @@ class HealthChecker:
             sock.close()
             
             if result == 0:
-                return True, "NTRIP服务端口正常"
+                return True, "NTRIP service port OK"
             else:
-                return False, "NTRIP服务端口无法连接"
+                return False, "NTRIP service port failed to connect"
         except Exception as e:
-            return False, f"NTRIP服务检查异常: {e}"
+            return False, f"NTRIP service check exception:{e}"
     
     def check_memory_usage(self) -> Tuple[bool, str]:
         """检查内存使用情况"""
@@ -80,13 +80,13 @@ class HealthChecker:
             if mem_total > 0:
                 usage_percent = (mem_total - mem_available) / mem_total * 100
                 if usage_percent < 90:
-                    return True, f"内存使用率: {usage_percent:.1f}%"
+                    return True, f"Memory usage:{usage_percent:.1f}%"
                 else:
-                    return False, f"内存使用率过高: {usage_percent:.1f}%"
+                    return False, f"High memory usage:{usage_percent:.1f}%"
             else:
-                return False, "无法获取内存信息"
+                return False, "Unable to get memory information"
         except Exception as e:
-            return False, f"内存检查异常: {e}"
+            return False, f"Memory check exception:{e}"
     
     def check_disk_space(self) -> Tuple[bool, str]:
         """检查磁盘空间"""
@@ -96,11 +96,11 @@ class HealthChecker:
             usage_percent = used / total * 100
             
             if usage_percent < 90:
-                return True, f"磁盘使用率: {usage_percent:.1f}%"
+                return True, f"Disk usage:{usage_percent:.1f}%"
             else:
-                return False, f"磁盘空间不足: {usage_percent:.1f}%"
+                return False, f"Low disk space:{usage_percent:.1f}%"
         except Exception as e:
-            return False, f"磁盘检查异常: {e}"
+            return False, f"Disk Check Exception:{e}"
     
     def run_checks(self) -> Dict[str, any]:
         """运行所有健康检查"""
@@ -129,20 +129,20 @@ class HealthChecker:
                     failed_checks.append(check_name)
                     results['healthy'] = False
             except Exception as e:
-                logger.error(f"[ERROR] {check_name}: 检查失败 - {e}")
+                logger.error(f"[ERROR] {check_name}: Check failed -{e}")
                 results['checks'][check_name] = {
                     'success': False,
-                    'message': f"检查失败: {e}"
+                    'message': f"Check failed:{e}"
                 }
                 failed_checks.append(check_name)
                 results['healthy'] = False
         
         if results['healthy']:
-            results['summary'] = "所有健康检查通过"
-            logger.info("[OK] 所有健康检查通过")
+            results['summary'] = "All health checks passed"
+            logger.info("[OK] All health checks passed")
         else:
-            results['summary'] = f"健康检查失败: {', '.join(failed_checks)}"
-            logger.error(f"[FAIL] 健康检查失败: {', '.join(failed_checks)}")
+            results['summary'] = f"Health check failed:{', '.join(failed_checks)}"
+            logger.error(f"[fail] Health check failed:{', '.join(failed_checks)}")
         
         return results
 

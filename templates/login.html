@@ -122,7 +122,7 @@
     <script>
         let isSubmitting = false;
         
-        // 页面加载时检查重定向参数
+        // Check redirect parameters on page load
         window.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);
             const redirectPage = urlParams.get('redirect');
@@ -216,7 +216,7 @@
                 return false;
             }
             
-            // 防止重复提交
+            // Prevent duplicate submissions
             isSubmitting = true;
             const submitBtn = document.getElementById('loginBtn');
             submitBtn.disabled = true;

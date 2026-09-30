@@ -94,22 +94,22 @@ class WebManager:
             minutes = int((uptime_seconds % 3600) // 60)
             
             if days > 0:
-                return f"{days}天{hours}小时{minutes}分钟"
+                return f"{days}days{hours}hours{minutes}min"
             elif hours > 0:
-                return f"{hours}小时{minutes}分钟"
+                return f"{hours}hours{minutes}min"
             else:
-                return f"{minutes}分钟"
+                return f"{minutes}min"
         except:
-            return "0分钟"
+            return "0 minutes"
     
     def _validate_alphanumeric(self, value, field_name):
         """验证输入是否只包含英文字母、数字、下划线和中横线"""
         if not value:
-            return False, f"{field_name}不能为空"
+            return False, f"{field_name}cannot be empty"
         
         # 允许英文字母、数字、下划线和中横线
         if not re.match(r'^[a-zA-Z0-9_-]+$', value):
-            return False, f"{field_name}只能包含英文字母、数字、下划线和中横线"
+            return False, f"{field_name}Must contain letters, numbers, underscores and horizontal lines only"
         
         return True, ""
     
@@ -121,11 +121,11 @@ class WebManager:
                 template_content = f.read()
             return render_template_string(template_content, **kwargs)
         except FileNotFoundError:
-            log_error(f"模板文件未找到: {template_path}")
-            return f"<h1>模板文件未找到: {template_name}</h1>"
+            log_error(f"Template file not found:{template_path}")
+            return f"<h1>Template file not found:{template_name}</h1>"
         except Exception as e:
-            log_error(f"加载模板文件失败: {e}")
-            return f"<h1>加载模板失败: {str(e)}</h1>"
+            log_error(f"Failed to load template file:{e}")
+            return f"<h1>Failed to load template:{str(e)}</h1>"
     
     def _register_routes(self):
         """注册Flask路由"""
@@ -189,22 +189,22 @@ class WebManager:
                 
                 # 防止空白提交
                 if not username or not password:
-                    return self._load_template('login.html', error="用户名和密码不能为空")
+                    return self._load_template('login.html', error="Username and password cannot be empty")
                 
                 # 长度验证
                 if len(username) < 2 or len(username) > 50:
-                    return self._load_template('login.html', error="用户名长度必须在2-50个字符之间")
+                    return self._load_template('login.html', error="Username must be between 2-50 characters long")
                 
                 if len(password) < 6 or len(password) > 100:
-                    return self._load_template('login.html', error="密码长度必须在6-100个字符之间")
+                    return self._load_template('login.html', error="Password length must be between 6-100 characters")
                 
                 # 验证用户名字符
-                username_valid, username_error = self._validate_alphanumeric(username, "用户名")
+                username_valid, username_error = self._validate_alphanumeric(username, "Username")
                 if not username_valid:
                     return self._load_template('login.html', error=username_error)
                 
                 # 验证密码字符
-                password_valid, password_error = self._validate_alphanumeric(password, "密码")
+                password_valid, password_error = self._validate_alphanumeric(password, "Password")
                 if not password_valid:
                     return self._load_template('login.html', error=password_error)
                 
@@ -219,7 +219,7 @@ class WebManager:
                     
                     return redirect(url_for('index'))
                 else:
-                    return self._load_template('login.html', error="用户名或密码错误")
+                    return self._load_template('login.html', error="Incorrect username or password")
             
             return self._load_template('login.html')
         
@@ -237,39 +237,39 @@ class WebManager:
             try:
                 data = request.get_json()
                 if not data:
-                    return jsonify({'error': '请求数据格式错误'}), 400
+                    return jsonify({'error': 'Wrong request data format'}), 400
                 
                 username = data.get('username', '').strip()
                 password = data.get('password', '').strip()
                 
                 # 防止空白提交
                 if not username or not password:
-                    return jsonify({'error': '用户名和密码不能为空'}), 400
+                    return jsonify({'error': 'Username and password cannot be empty'}), 400
                 
                 # 长度验证
                 if len(username) < 2 or len(username) > 50:
-                    return jsonify({'error': '用户名长度必须在2-50个字符之间'}), 400
+                    return jsonify({'error': 'Username must be between 2-50 characters long'}), 400
                 
                 if len(password) < 6 or len(password) > 100:
-                    return jsonify({'error': '密码长度必须在6-100个字符之间'}), 400
+                    return jsonify({'error': 'Password length must be between 6-100 characters'}), 400
                 
                 # 防止SQL注入的基本字符检查
                 if any(char in username for char in ["'", '"', ';', '--', '/*', '*/', 'xp_']):
-                    return jsonify({'error': '用户名包含非法字符'}), 400
+                    return jsonify({'error': 'Username contains illegal characters'}), 400
                 
                 if self.db_manager.verify_admin(username, password):
                     session['admin_logged_in'] = True
                     session['admin_username'] = username
                     return jsonify({
                         'success': True,
-                        'message': '登录成功',
+                        'message': 'Login Successful',
                         'token': 'session_based'  # 使用session而不是JWT
                     })
                 else:
-                    return jsonify({'error': '用户名或密码错误'}), 401
+                    return jsonify({'error': 'Incorrect username or password'}), 401
             except Exception as e:
-                    log_error(f"API登录失败: {e}")
-                    return jsonify({'error': '登录失败'}), 500
+                    log_error(f"API login failure:{e}")
+                    return jsonify({'error': 'Login failed'}), 500
 
         
         @self.app.route('/api/mount_info/<mount>')
@@ -288,7 +288,7 @@ class WebManager:
             else:
                 return jsonify({
                     'success': False,
-                    'message': '挂载点数据不存在或未解析'
+                    'message': 'The mount point data does not exist or is not parsed'
                 })
         
 
@@ -305,7 +305,7 @@ class WebManager:
                 def delayed_restart():
                     """延迟重启程序"""
                     time.sleep(1)  # 给响应时间返回
-                    log_info("管理员请求重启程序")
+                    log_info("Admin request to restart program")
                     os._exit(0)  # 强制退出程序
                 
                 # 在新线程中执行重启
@@ -315,11 +315,11 @@ class WebManager:
                 
                 return jsonify({
                     'success': True,
-                    'message': '程序重启指令已发送'
+                    'message': 'Program restart instruction sent'
                 })
                 
             except Exception as e:
-                    log_error(f"重启程序失败: {e}")
+                    log_error(f"Failed to restart the program:{e}")
                     return jsonify({
                         'success': False,
                         'error': str(e)
@@ -337,7 +337,7 @@ class WebManager:
                     return jsonify({'error': 'Mount not found'}), 404
                 return jsonify(realtime_data)
             except Exception as e:
-                    log_error(f"获取挂载点 {mount_name} 实时数据失败: {e}")
+                    log_error(f"Get mount points{mount_name}Real-time data failure:{e}")
                     return jsonify({'error': str(e)}), 500
         
         @self.app.route('/api/mount/initialize', methods=['POST'])
@@ -351,10 +351,10 @@ class WebManager:
                     return jsonify({'error': 'Mount name is required'}), 400
                 
                 connection.get_connection_manager().add_mount_connection(mount_name, '127.0.0.1', 'Web Interface')
-                log_system_event(f"挂载点 {mount_name} 初始化成功")
+                log_system_event(f"Mount point{mount_name}Initialization successful")
                 return jsonify({'success': True, 'message': f'Mount {mount_name} initialized'})
             except Exception as e:
-                log_error(f"初始化挂载点失败: {e}")
+                log_error(f"Failed to initialize mount point:{e}")
                 return jsonify({'error': str(e)}), 500
         
 
@@ -367,10 +367,10 @@ class WebManager:
             """停止所有挂载点的旁路解析"""
             try:
                 rtcm_manager.stop_realtime_parsing()
-                log_system_event("所有挂载点旁路解析停止成功")
+                log_system_event("All mount point bypass resolution stopped successfully")
                 return jsonify({'success': True, 'message': 'All bypass parsing stopped'})
             except Exception as e:
-                log_error(f"停止所有旁路解析失败: {e}")
+                log_error(f"Failed to stop all bypass resolution:{e}")
                 return jsonify({'error': str(e)}), 500
         
         @self.app.route('/api/mount/<mount_name>/simulate', methods=['POST'])
@@ -379,11 +379,11 @@ class WebManager:
             """为挂载点模拟数据"""
             try:
                 # 模拟数据功能暂时不可用
-                log_system_event(f"挂载点 {mount_name} 数据模拟请求（功能暂时不可用）")
-                log_system_event(f"挂载点 {mount_name} 数据模拟启动成功")
+                log_system_event(f"Mount point{mount_name}Data simulation request (feature temporarily unavailable)")
+                log_system_event(f"Mount point{mount_name}Data simulation started successfully")
                 return jsonify({'success': True, 'message': f'Data simulation started for {mount_name}'})
             except Exception as e:
-                log_error(f"模拟挂载点数据失败: {e}")
+                log_error(f"Failed to simulate mount point data:{e}")
                 return jsonify({'error': str(e)}), 500
         
         @self.app.route('/api/mount/<mount_name>/rtcm-parse/start', methods=['POST'])
@@ -456,7 +456,7 @@ class WebManager:
                     # 确保数据包含mount_name
                     if 'mount_name' not in parsed_data:
                         # print(f"[后端推送] 推送数据缺少mount_name字段")
-                        log_warning("推送数据缺少mount_name字段")
+                        log_warning("Missing mount_name field for push data")
                         return
                         
                     # 通过SocketIO推送给前端，事件名为'rtcm_realtime_data'
@@ -479,14 +479,14 @@ class WebManager:
                 )
                 if success:
                     # print(f" [后端API] 解析启动成功 - 挂载点: {mount_name}")
-                    log_system_event(f"挂载点 {mount_name} 实时RTCM解析已启动")
+                    log_system_event(f"Mount point{mount_name}Real-time RTCM resolution started")
                     return jsonify({'success': True, 'message': f'Real-time RTCM parsing started for {mount_name}'})
                 else:
                     # print(f"[后端API] 解析启动失败 - 挂载点: {mount_name} (可能离线)")
                     return jsonify({'error': 'Failed to start parsing - mount may be offline'}), 400
             except Exception as e:
                 # print(f"[后端API] 启动RTCM解析异常: {e}")
-                log_error(f"启动实时RTCM解析失败: {e}")
+                log_error(f"Failed to start real-time RTCM parsing:{e}")
                 return jsonify({'error': str(e)}), 500
         
         @self.app.route('/api/mount/rtcm-parse/stop', methods=['POST'])
@@ -495,10 +495,10 @@ class WebManager:
             """停止所有实时RTCM解析"""
             try:
                 rtcm_manager.stop_realtime_parsing()
-                log_system_event("所有实时RTCM解析已停止")
+                log_system_event("All real-time RTCM resolution stopped")
                 return jsonify({'success': True, 'message': 'Real-time RTCM parsing stopped'})
             except Exception as e:
-                log_error(f"停止实时RTCM解析失败: {e}")
+                log_error(f"Failed to stop real-time RTCM parsing:{e}")
                 return jsonify({'error': str(e)}), 500
         
         @self.app.route('/api/mount/rtcm-parse/status', methods=['GET'])
@@ -513,7 +513,7 @@ class WebManager:
                     'message': 'Parser status retrieved successfully'
                 })
             except Exception as e:
-                log_error(f"获取解析器状态失败: {e}")
+                log_error(f"Failed to get parser status:{e}")
                 return jsonify({'error': str(e)}), 500
         
         @self.app.route('/api/mount/rtcm-parse/heartbeat', methods=['POST'])
@@ -531,7 +531,7 @@ class WebManager:
                 else:
                     return jsonify({'error': 'Mount name is required'}), 400
             except Exception as e:
-                log_error(f"更新解析心跳失败: {e}")
+                log_error(f"Update resolution heartbeat failed:{e}")
                 return jsonify({'error': str(e)}), 500
         
 
@@ -561,7 +561,7 @@ class WebManager:
                     'website': config.APP_WEBSITE
                 })
             except Exception as e:
-                log_error(f"获取应用信息失败: {e}")
+                log_error(f"Failed to get app info:{e}")
                 return jsonify({'error': str(e)}), 500
         
         @self.app.route('/api/users', methods=['GET', 'POST'])
@@ -578,7 +578,7 @@ class WebManager:
                         online_users = connection.get_connection_manager().get_online_users()
                         online_usernames = list(online_users.keys())
                     except Exception as e:
-                        log_error(f"获取在线用户失败: {e}")
+                        log_error(f"Failed to get online users:{e}")
                         online_usernames = []
                     
                     # 将tuple转换为字典格式并添加在线状态和连接数
@@ -598,7 +598,7 @@ class WebManager:
                     
                     return jsonify(user_list)
                 except Exception as e:
-                    log_error(f"获取用户列表失败: {e}")
+                    log_error(f"Failed to get user list:{e}")
                     return jsonify({'error': str(e)}), 500
             
             elif request.method == 'POST':
@@ -606,34 +606,34 @@ class WebManager:
                 try:
                     data = request.get_json()
                     if not data:
-                        return jsonify({'error': '请求数据格式错误'}), 400
+                        return jsonify({'error': 'Wrong request data format'}), 400
                     
                     username = data.get('username', '').strip()
                     password = data.get('password', '').strip()
                     
                     # 表单验证
                     if not username or not password:
-                        return jsonify({'error': '用户名和密码不能为空'}), 400
+                        return jsonify({'error': 'Username and password cannot be empty'}), 400
                     
                     # 验证用户名字符
-                    username_valid, username_error = self._validate_alphanumeric(username, "用户名")
+                    username_valid, username_error = self._validate_alphanumeric(username, "Username")
                     if not username_valid:
                         return jsonify({'error': username_error}), 400
                     
                     # 验证密码字符
-                    password_valid, password_error = self._validate_alphanumeric(password, "密码")
+                    password_valid, password_error = self._validate_alphanumeric(password, "Password")
                     if not password_valid:
                         return jsonify({'error': password_error}), 400
                     
                     elif len(username) < 2 or len(username) > 50:
-                        return jsonify({'error': '用户名长度必须在2-50个字符之间'}), 400
+                        return jsonify({'error': 'Username must be between 2-50 characters long'}), 400
                     elif len(password) < 6 or len(password) > 100:
-                        return jsonify({'error': '密码长度必须在6-100个字符之间'}), 400
+                        return jsonify({'error': 'Password length must be between 6-100 characters'}), 400
                     
                     # 检查用户是否已存在
                     existing_users = [u[1] for u in self.db_manager.get_all_users()]
                     if username in existing_users:
-                        return jsonify({'error': '用户名已存在'}), 400
+                        return jsonify({'error': 'Username already exists'}), 400
                     
                     success, message = self.db_manager.add_user(username, password)
                     if success:
@@ -642,7 +642,7 @@ class WebManager:
                         return jsonify({'error': message}), 400
                     
                 except Exception as e:
-                    log_error(f"添加用户失败: {e}")
+                    log_error(f"Failed to add user:{e}")
                     return jsonify({'error': str(e)}), 500
         
         @self.app.route('/api/users/<username>', methods=['PUT', 'DELETE'])
@@ -654,7 +654,7 @@ class WebManager:
                 try:
                     data = request.get_json()
                     if not data:
-                        return jsonify({'error': '请求数据格式错误'}), 400
+                        return jsonify({'error': 'Wrong request data format'}), 400
                     
                     new_password = data.get('password', '').strip()
                     new_username = data.get('username', '').strip()
@@ -663,41 +663,41 @@ class WebManager:
                     if username == config.DEFAULT_ADMIN['username']:
                         # 管理员只能修改密码，不能修改用户名
                         if new_username:
-                            return jsonify({'error': '管理员用户名不能修改'}), 400
+                            return jsonify({'error': 'Administrator username cannot be modified'}), 400
                         
                         if not new_password:
-                            return jsonify({'error': '新密码不能为空'}), 400
+                            return jsonify({'error': 'New password cannot be empty'}), 400
                         
                         # 验证密码字符
-                        password_valid, password_error = self._validate_alphanumeric(new_password, "新密码")
+                        password_valid, password_error = self._validate_alphanumeric(new_password, "New password")
                         if not password_valid:
                             return jsonify({'error': password_error}), 400
                         
                         elif len(new_password) < 6 or len(new_password) > 100:
-                            return jsonify({'error': '新密码长度必须在6-100个字符之间'}), 400
+                            return jsonify({'error': 'New password must be between 6-100 characters long'}), 400
                         
                         # 管理员密码更新
                         success = self.db_manager.update_admin_password(username, new_password)
                         if success:
-                            return jsonify({'message': f'管理员 {username} 密码更新成功'})
+                            return jsonify({'message': f'Administrator{username}Password updated successfully'})
                         else:
-                            return jsonify({'error': '管理员密码更新失败'}), 500
+                            return jsonify({'error': 'Admin password update failed'}), 500
                     else:
                         # 普通用户可以修改密码和用户名
                         if new_username:
                             # 修改用户名
                             # 验证用户名字符
-                            username_valid, username_error = self._validate_alphanumeric(new_username, "用户名")
+                            username_valid, username_error = self._validate_alphanumeric(new_username, "Username")
                             if not username_valid:
                                 return jsonify({'error': username_error}), 400
                             
                             if len(new_username) < 2 or len(new_username) > 50:
-                                return jsonify({'error': '用户名长度必须在2-50个字符之间'}), 400
+                                return jsonify({'error': 'Username must be between 2-50 characters long'}), 400
                             
                             # 检查新用户名是否已存在
                             existing_users = [u[1] for u in self.db_manager.get_all_users()]
                             if new_username in existing_users and new_username != username:
-                                return jsonify({'error': '用户名已存在'}), 400
+                                return jsonify({'error': 'Username already exists'}), 400
                             
                             # 强制下线用户
                             forwarder.force_disconnect_user(username)
@@ -713,32 +713,32 @@ class WebManager:
                                     break
                             
                             if user_id is None:
-                                return jsonify({'error': '用户不存在'}), 400
+                                return jsonify({'error': 'User does not exist'}), 400
                             
                             # 更新用户名（保持原密码）
                             success, message = self.db_manager.update_user(user_id, new_username, current_password)
                             if success:
-                                return jsonify({'message': f'用户名从 {username} 更新为 {new_username}'})
+                                return jsonify({'message': f'Username from{username}Updated to{new_username}'})
                             else:
                                 return jsonify({'error': message}), 400
                         
                         elif new_password:
                             # 修改密码
                             if len(new_password) < 6 or len(new_password) > 100:
-                                return jsonify({'error': '新密码长度必须在6-100个字符之间'}), 400
+                                return jsonify({'error': 'New password must be between 6-100 characters long'}), 400
                             
                             # 强制下线用户
                             forwarder.force_disconnect_user(username)
                             success, message = self.db_manager.update_user_password(username, new_password)
                             if success:
-                                return jsonify({'message': f'用户 {username} 密码更新成功'})
+                                return jsonify({'message': f'User{username}Password updated successfully'})
                             else:
                                 return jsonify({'error': message}), 400
                         else:
-                            return jsonify({'error': '请提供要更新的密码或用户名'}), 400
+                            return jsonify({'error': 'Please provide a password or username to update'}), 400
                     
                 except Exception as e:
-                    log_error(f"更新用户失败: {e}")
+                    log_error(f"Failed to update user:{e}")
                     return jsonify({'error': str(e)}), 500
             
             elif request.method == 'DELETE':
@@ -748,12 +748,12 @@ class WebManager:
                     forwarder.force_disconnect_user(username)
                     success, result = self.db_manager.delete_user(username)
                     if success:
-                        return jsonify({'message': f'用户 {result} 删除成功'})
+                        return jsonify({'message': f'User{result}deleted successfully'})
                     else:
                         return jsonify({'error': result}), 400
                     
                 except Exception as e:
-                    log_error(f"删除用户失败: {e}")
+                    log_error(f"Failed to delete user:{e}")
                     return jsonify({'error': str(e)}), 500
         
         @self.app.route('/api/mounts', methods=['GET', 'POST'])
@@ -797,7 +797,7 @@ class WebManager:
                     
                     return jsonify(mount_list)
                 except Exception as e:
-                    log_error(f"获取挂载点列表失败: {e}")
+                    log_error(f"Failed to get mount point list:{e}")
                     return jsonify({'error': str(e)}), 500
             
             elif request.method == 'POST':
@@ -805,7 +805,7 @@ class WebManager:
                 try:
                     data = request.get_json()
                     if not data:
-                        return jsonify({'error': '请求数据格式错误'}), 400
+                        return jsonify({'error': 'Wrong request data format'}), 400
                     
                     mount = data.get('mount', '').strip()
                     password = data.get('password', '').strip()
@@ -813,22 +813,22 @@ class WebManager:
                     
                     # 表单验证
                     if not mount or not password:
-                        return jsonify({'error': '挂载点名称和密码不能为空'}), 400
+                        return jsonify({'error': 'Mountpoint name and password cannot be empty'}), 400
                     
                     # 验证挂载点名称字符
-                    mount_valid, mount_error = self._validate_alphanumeric(mount, "挂载点名称")
+                    mount_valid, mount_error = self._validate_alphanumeric(mount, "Mount Point Name")
                     if not mount_valid:
                         return jsonify({'error': mount_error}), 400
                     
                     # 验证密码字符
-                    password_valid, password_error = self._validate_alphanumeric(password, "密码")
+                    password_valid, password_error = self._validate_alphanumeric(password, "Password")
                     if not password_valid:
                         return jsonify({'error': password_error}), 400
                     
                     elif len(mount) < 2 or len(mount) > 50:
-                        return jsonify({'error': '挂载点名称长度必须在2-50个字符之间'}), 400
+                        return jsonify({'error': 'Mount point name must be between 2-50 characters long'}), 400
                     elif len(password) < 6 or len(password) > 100:
-                        return jsonify({'error': '密码长度必须在6-100个字符之间'}), 400
+                        return jsonify({'error': 'Password length must be between 6-100 characters'}), 400
                     
                     # 如果指定了user_id，验证用户是否存在
                     if user_id is not None:
@@ -837,14 +837,14 @@ class WebManager:
                             users = self.db_manager.get_all_users()
                             user_ids = [u[0] for u in users]  # u[0] 是用户ID
                             if user_id not in user_ids:
-                                return jsonify({'error': '指定的用户不存在'}), 400
+                                return jsonify({'error': 'The specified user does not exist'}), 400
                         except (ValueError, TypeError):
-                            return jsonify({'error': '用户ID格式错误'}), 400
+                            return jsonify({'error': 'Wrong user ID format'}), 400
                     
                     # 检查挂载点是否已存在
                     existing_mounts = [m[1] for m in self.db_manager.get_all_mounts()]
                     if mount in existing_mounts:
-                        return jsonify({'error': '挂载点已存在'}), 400
+                        return jsonify({'error': 'Mount point already exists'}), 400
                     
                     success, message = self.db_manager.add_mount(mount, password, user_id)
                     if success:
@@ -853,7 +853,7 @@ class WebManager:
                         return jsonify({'error': message}), 400
                     
                 except Exception as e:
-                    log_error(f"添加挂载点失败: {e}")
+                    log_error(f"Failed to add mount point:{e}")
                     return jsonify({'error': str(e)}), 500
         
         @self.app.route('/api/mounts/<mount_name>', methods=['PUT', 'DELETE'])
@@ -865,7 +865,7 @@ class WebManager:
                 try:
                     data = request.get_json()
                     if not data:
-                        return jsonify({'error': '请求数据格式错误'}), 400
+                        return jsonify({'error': 'Wrong request data format'}), 400
                     
                     new_password = data.get('password', '').strip()
                     new_mount_name = data.get('mount_name', '').strip()
@@ -875,17 +875,17 @@ class WebManager:
                     # 验证新挂载点名称
                     if new_mount_name:
                         # 验证挂载点名称字符
-                        mount_valid, mount_error = self._validate_alphanumeric(new_mount_name, "挂载点名称")
+                        mount_valid, mount_error = self._validate_alphanumeric(new_mount_name, "Mount Point Name")
                         if not mount_valid:
                             return jsonify({'error': mount_error}), 400
                         
                         if len(new_mount_name) < 2 or len(new_mount_name) > 50:
-                            return jsonify({'error': '挂载点名称长度必须在2-50个字符之间'}), 400
+                            return jsonify({'error': 'Mount point name must be between 2-50 characters long'}), 400
                         
                         # 检查新挂载点名称是否已存在
                         existing_mounts = [m[1] for m in self.db_manager.get_all_mounts()]
                         if new_mount_name in existing_mounts and new_mount_name != mount_name:
-                            return jsonify({'error': '挂载点名称已存在'}), 400
+                            return jsonify({'error': 'Mount point name already exists'}), 400
                     
                     # 处理用户绑定（支持用户名和用户ID两种方式）
                     if username is not None:
@@ -893,7 +893,7 @@ class WebManager:
                             new_user_id = None  # 空字符串或"null"表示解除绑定
                         else:
                             # 验证用户名字符
-                            username_valid, username_error = self._validate_alphanumeric(username, "用户名")
+                            username_valid, username_error = self._validate_alphanumeric(username, "Username")
                             if not username_valid:
                                 return jsonify({'error': username_error}), 400
                             
@@ -906,7 +906,7 @@ class WebManager:
                                     user_found = True
                                     break
                             if not user_found:
-                                return jsonify({'error': f'用户 "{username}" 不存在'}), 400
+                                return jsonify({'error': f'User "{username}"Does not exist'}), 400
                     elif new_user_id is not None:
                         # 兼容原有的用户ID方式
                         if new_user_id == "" or (isinstance(new_user_id, str) and new_user_id.lower() == "null"):
@@ -918,18 +918,18 @@ class WebManager:
                                 users = self.db_manager.get_all_users()
                                 user_exists = any(user[0] == new_user_id for user in users)
                                 if not user_exists:
-                                    return jsonify({'error': '指定的用户不存在'}), 400
+                                    return jsonify({'error': 'The specified user does not exist'}), 400
                             except (ValueError, TypeError):
-                                return jsonify({'error': '用户ID格式错误'}), 400
+                                return jsonify({'error': 'Wrong user ID format'}), 400
                     
                     if new_password:
                         # 验证密码字符
-                        password_valid, password_error = self._validate_alphanumeric(new_password, "密码")
+                        password_valid, password_error = self._validate_alphanumeric(new_password, "Password")
                         if not password_valid:
                             return jsonify({'error': password_error}), 400
                         
                         if len(new_password) < 6 or len(new_password) > 100:
-                            return jsonify({'error': '新密码长度必须在6-100个字符之间'}), 400
+                            return jsonify({'error': 'New password must be between 6-100 characters long'}), 400
                     
                     # 强制下线挂载点
                     forwarder.force_disconnect_mount(mount_name)
@@ -943,7 +943,7 @@ class WebManager:
                             break
                     
                     if mount_id is None:
-                        return jsonify({'error': '挂载点不存在'}), 400
+                        return jsonify({'error': 'Mount point does not exist'}), 400
                     
                     # 使用update_mount函数更新挂载点信息
                     success, result = self.db_manager.update_mount(
@@ -956,27 +956,27 @@ class WebManager:
                         # 构建返回消息
                         messages = []
                         if new_mount_name:
-                            messages.append(f'挂载点名称从 {mount_name} 更新为 {new_mount_name}')
+                            messages.append(f'Mount point name from{mount_name}Updated to{new_mount_name}')
                         if new_password:
-                            messages.append('挂载点密码已更新')
+                            messages.append('Mountpoint password updated')
                         if 'username' in data or new_user_id is not None:
                             if new_user_id is None:
-                                messages.append('挂载点所属用户已清除')
+                                messages.append('Mount point belongs to user cleared')
                             else:
                                 if username and username != "":
-                                    messages.append(f'挂载点所属用户已更新为 {username}')
+                                    messages.append(f'The user belonging to the mount point has been updated to{username}')
                                 else:
-                                    messages.append(f'挂载点所属用户已更新为用户ID {new_user_id}')
+                                    messages.append(f'The user belonging to the mount point has been updated to the user ID{new_user_id}')
                         
                         if not messages:
-                            messages.append('挂载点信息更新成功')
+                            messages.append('Mount point information updated successfully')
                         
                         return jsonify({'message': '; '.join(messages)})
                     else:
                         return jsonify({'error': result}), 400
                     
                 except Exception as e:
-                    log_error(f"更新挂载点失败: {e}")
+                    log_error(f"Failed to update mount point:{e}")
                     return jsonify({'error': str(e)}), 500
             
             elif request.method == 'DELETE':
@@ -991,7 +991,7 @@ class WebManager:
                             break
                     
                     if mount_id is None:
-                        return jsonify({'error': '挂载点不存在'}), 400
+                        return jsonify({'error': 'Mount point does not exist'}), 400
                     
                     # 强制下线挂载点
                     forwarder.force_disconnect_mount(mount_name)
@@ -999,12 +999,12 @@ class WebManager:
                     if success:
                         # 清理挂载点连接数据
                         connection.get_connection_manager().remove_mount_connection(mount_name)
-                        return jsonify({'message': f'挂载点 {result} 删除成功'})
+                        return jsonify({'message': f'Mount point{result}deleted successfully'})
                     else:
                         return jsonify({'error': result}), 400
                     
                 except Exception as e:
-                    log_error(f"删除挂载点失败: {e}")
+                    log_error(f"Failed to delete mount point:{e}")
                     return jsonify({'error': str(e)}), 500
 
         
@@ -1028,7 +1028,7 @@ class WebManager:
                     'mount_info': mount_info
                 })
             except Exception as e:
-                log_error(f"检查挂载点在线状态失败: {e}")
+                log_error(f"Failed to check mount point online status:{e}")
                 return jsonify({'error': str(e)}), 500
         
         @self.app.route('/api/system/stats')
@@ -1042,10 +1042,10 @@ class WebManager:
                 
                     return jsonify(stats)
                 else:
-                    log_error("API错误: 无法获取服务器实例或get_system_stats方法")
-                    return jsonify({'error': '无法获取系统统计数据'}), 500
+                    log_error("API error: Could not get server instance or get_system_stats method")
+                    return jsonify({'error': 'Unable to get system statistics'}), 500
             except Exception as e:
-                log_error(f"API异常: 获取系统统计数据失败: {e}")
+                log_error(f"API exception: Failed to get system statistics:{e}")
                 return jsonify({'error': str(e)}), 500
         
         @self.app.route('/api/str-table', methods=['GET'])
@@ -1066,7 +1066,7 @@ class WebManager:
                     'timestamp': time.time()
                 })
             except Exception as e:
-                log_error(f"获取STR表失败: {e}")
+                log_error(f"Failed to get Str table:{e}")
                 return jsonify({
                     'success': False,
                     'error': str(e)
@@ -1096,7 +1096,7 @@ class WebManager:
                     'timestamp': time.time()
                 })
             except Exception as e:
-                log_error(f"获取挂载点{mount_name}历史数据失败: {e}")
+                log_error(f"Get mount points{mount_name}Historical data failed:{e}")
                 return jsonify({
                     'success': False,
                     'error': str(e)
@@ -1120,7 +1120,7 @@ class WebManager:
                         'error': 'No data available for this mount point'
                     }), 404
             except Exception as e:
-                log_error(f"获取挂载点{mount_name}历史数据失败: {e}")
+                log_error(f"Get mount points{mount_name}Historical data failed:{e}")
                 return jsonify({'error': str(e)}), 500
 
     
@@ -1137,32 +1137,32 @@ class WebManager:
             """客户端连接"""
             from flask import session
             client_id = session.get('sid', 'unknown')
-            log_web_request('websocket', 'connect', client_id, 'WebSocket客户端连接')
+            log_web_request('websocket', 'connect', client_id, 'WebSocket client disconnected')
             # 将客户端加入到数据推送房间
             join_room('data_push')
             if config.LOG_FREQUENT_STATUS:
-                log_info(f"客户端 {client_id} 已加入data_push房间")
-            emit('status', {'message': '连接成功'})
+                log_info(f"Client{client_id}joined data_push room")
+            emit('status', {'message': 'Connection successful'})
         
         @self.socketio.on('disconnect')
         def handle_disconnect():
             """客户端断开连接"""
             from flask import session
             client_id = session.get('sid', 'unknown')
-            log_web_request('websocket', 'disconnect', client_id, 'WebSocket客户端断开')
+            log_web_request('websocket', 'disconnect', client_id, 'WebSocket client disconnected')
             
             # 当WebSocket连接断开时，自动清理Web解析线程
             try:
                 # 获取当前活跃的Web解析挂载点
                 current_web_mount = rtcm_manager.get_current_web_mount()
                 if current_web_mount:
-                    log_info(f"WebSocket断开连接，自动清理Web解析线程 [挂载点: {current_web_mount}]")
+                    log_info(f"WebSocket disconnected, automatically cleaned up web resolution thread [Mount point:{current_web_mount}]")
                     rtcm_manager.stop_realtime_parsing()
-                    log_system_event(f"WebSocket断开连接已自动清理Web解析线程: {current_web_mount}")
+                    log_system_event(f"WebSocket disconnected Automatic cleanup of web resolution threads:{current_web_mount}")
                 else:
-                    log_debug("WebSocket断开连接，但没有活跃的Web解析线程需要清理")
+                    log_debug("WebSocket disconnected but no active web resolution thread to clean")
             except Exception as e:
-                log_error(f"WebSocket断开连接时清理Web解析线程失败: {e}")
+                log_error(f"Failed to clean up web resolution thread when WebSocket is disconnected:{e}")
         
         @self.socketio.on('request_mount_data')
         def handle_request_mount_data(data):
@@ -1201,11 +1201,11 @@ class WebManager:
                             'timestamp': time.time()
                         })
                     else:
-                        emit('error', {'message': '无法获取系统统计数据'})
+                        emit('error', {'message': 'Unable to get system statistics'})
                 else:
-                    emit('error', {'message': '服务器实例不可用'})
+                    emit('error', {'message': 'Server instance not available'})
             except Exception as e:
-                log_error(f"处理系统统计数据请求失败: {e}")
+                log_error(f"Failed to process system statistics request:{e}")
                 emit('error', {'message': str(e)})
     
     def require_login(self, f):
@@ -1215,7 +1215,7 @@ class WebManager:
             if not session.get('admin_logged_in'):
                 # 检查是否是API请求
                 if request.path.startswith('/api/'):
-                    return jsonify({'error': '未登录或登录已过期'}), 401
+                    return jsonify({'error': 'Not logged in or login expired'}), 401
                 else:
                     return redirect(url_for('login'))
             return f(*args, **kwargs)
@@ -1230,7 +1230,7 @@ class WebManager:
             self.push_running = True
             self.push_thread = Thread(target=self._push_data_loop, daemon=True)
             self.push_thread.start()
-            log_system_event('Web实时数据推送已启动')
+            log_system_event('Web real-time data push started')
     
     def stop_rtcm_parsing(self):
         """停止RTCM解析"""
@@ -1241,11 +1241,11 @@ class WebManager:
             self.push_running = False
             if self.push_thread:
                 self.push_thread.join(timeout=5)
-            log_system_event('Web实时数据推送已停止')
+            log_system_event('Web real-time data push stopped')
     
     def _push_data_loop(self):
         """实时数据推送循环"""
-        log_info("数据推送循环已启动")
+        log_info("Data push cycle started")
         while self.push_running:
             try:
                 # 推送系统统计数据
@@ -1289,7 +1289,7 @@ class WebManager:
                 
                 time.sleep(config.REALTIME_PUSH_INTERVAL)
             except Exception as e:
-                log_error(f"数据推送异常: {e}", exc_info=True)
+                log_error(f"Data push exception:{e}", exc_info=True)
                 time.sleep(1)
     
     def push_log_message(self, message, log_type='info'):
@@ -1301,7 +1301,7 @@ class WebManager:
                 'timestamp': time.time()
             }, to='data_push')
         except Exception as e:
-            log_error(f"推送日志消息失败: {e}")
+            log_error(f"Push log message failed:{e}")
     
     def _format_uptime(self, uptime_seconds):
         """格式化运行时间"""
@@ -1311,11 +1311,11 @@ class WebManager:
         seconds = int(uptime_seconds % 60)
         
         if days > 0:
-            return f"{days}天 {hours}小时 {minutes}分钟"
+            return f"{days}days{hours}hours{minutes}min"
         elif hours > 0:
-            return f"{hours}小时 {minutes}分钟"
+            return f"{hours}hours{minutes}min"
         else:
-            return f"{minutes}分钟 {seconds}秒"
+            return f"{minutes}min{seconds}s"
     
 
     

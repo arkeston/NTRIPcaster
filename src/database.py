@@ -77,11 +77,11 @@ def init_db():
             admin_password = config.DEFAULT_ADMIN['password']
             hashed_password = hash_password(admin_password)
             c.execute("INSERT INTO admins (username, password) VALUES (?, ?)", (admin_username, hashed_password))
-            print(f"已创建默认管理员: {admin_username}/{admin_password}（请首次登录后修改）")
+            print(f"Default Admin Created:{admin_username}/{admin_password}(Please modify after first login)")
         
         conn.commit()
         conn.close()
-        log_info('数据库初始化完成')
+        log_info('Database initialization complete')
 
 def verify_mount_and_user(mount, username=None, password=None, mount_password=None, protocol_version="1.0"):
     """验证挂载点和用户信息是否合法
@@ -102,8 +102,8 @@ def verify_mount_and_user(mount, username=None, password=None, mount_password=No
             mount_result = c.fetchone()
             
             if not mount_result:
-                log_authentication(username or 'unknown', mount, False, 'database', '挂载点不存在')
-                return False, "挂载点不存在"
+                log_authentication(username or 'unknown', mount, False, 'database', 'Mount point does not exist')
+                return False, "Mount point does not exist"
             
             mount_id, stored_mount_password, bound_user_id = mount_result
             
@@ -111,50 +111,50 @@ def verify_mount_and_user(mount, username=None, password=None, mount_password=No
             if protocol_version == "2.0":
                 
                 if not username or not password:
-                    log_authentication(username or 'unknown', mount, False, 'database', 'NTRIP 2.0需要用户名和密码')
-                    return False, "NTRIP 2.0协议需要提供用户名和密码"
+                    log_authentication(username or 'unknown', mount, False, 'database', 'NTRIP 2.0 requires username and password')
+                    return False, "NTRIP 2.0 protocol requires username and password"
                 
                 # 验证用户是否存在
                 c.execute("SELECT id, password FROM users WHERE username = ?", (username,))
                 user_result = c.fetchone()
                 if not user_result:
-                    log_authentication(username, mount, False, 'database', '用户不存在')
-                    return False, "用户不存在"
+                    log_authentication(username, mount, False, 'database', 'User does not exist')
+                    return False, "User does not exist"
                 
                 user_id, stored_user_password = user_result
                 
                 # 验证用户密码
                 if not verify_password(stored_user_password, password):
-                    log_authentication(username, mount, False, 'database', '用户密码错误')
-                    return False, "用户密码错误"
+                    log_authentication(username, mount, False, 'database', 'Incorrect user password')
+                    return False, "Incorrect user password"
                 
                 # 验证挂载点是否绑定到该用户
                 if bound_user_id is not None and bound_user_id != user_id:
-                    log_authentication(username, mount, False, 'database', '用户无权限访问该挂载点')
-                    return False, "用户无权限访问该挂载点"
+                    log_authentication(username, mount, False, 'database', 'The user does not have permission to access the mount point')
+                    return False, "The user does not have permission to access the mount point"
                 
                 # NTRIP 2.0 不验证挂载点密码，只验证用户名和密码以及挂着的所属权限
-                log_authentication(username, mount, True, 'database', 'NTRIP 2.0认证成功')
-                return True, "NTRIP 2.0认证成功"
+                log_authentication(username, mount, True, 'database', 'NTRIP 2.0 certification successful')
+                return True, "NTRIP 2.0 certification successful"
             
             else:
                 # NTRIP 1.0 及以下版本验证逻辑
                 if not mount_password:
-                    log_authentication(username or 'unknown', mount, False, 'database', 'NTRIP 1.0需要挂载点密码')
-                    return False, "NTRIP 1.0协议需要提供挂载点密码"
+                    log_authentication(username or 'unknown', mount, False, 'database', 'NTRIP 1.0 requires a mount point password')
+                    return False, "NTRIP 1.0 protocol requires a mount point password"
                 
                 # 验证挂载点密码
                 if stored_mount_password != mount_password:
-                    log_authentication(username or 'unknown', mount, False, 'database', '挂载点密码错误')
-                    return False, "挂载点密码错误"
+                    log_authentication(username or 'unknown', mount, False, 'database', 'Wrong mount point password')
+                    return False, "Wrong mount point password"
                 
                 # NTRIP 1.0 只验证挂载点和挂载点密码，不验证用户
-                log_authentication(username or 'unknown', mount, True, 'database', 'NTRIP 1.0认证成功')
-                return True, "NTRIP 1.0认证成功"
+                log_authentication(username or 'unknown', mount, True, 'database', 'NTRIP 1.0 certification successful')
+                return True, "NTRIP 1.0 certification successful"
             
         except Exception as e:
-            log_error(f"用户认证异常: {e}", exc_info=True)
-            return False, f"认证异常: {e}"
+            log_error(f"User authentication exception:{e}", exc_info=True)
+            return False, f"Authentication exception:{e}"
         finally:
             conn.close()
 
@@ -169,17 +169,17 @@ def add_user(username, password):
             # 检查用户是否已存在
             c.execute("SELECT * FROM users WHERE username = ?", (username,))
             if c.fetchone():
-                return False, "用户名已存在"
+                return False, "Username already exists"
             
             # 哈希密码并添加用户
             hashed_password = hash_password(password)
             c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
             conn.commit()
-            log_database_operation('add_user', 'users', True, f'用户: {username}')
-            return True, "用户添加成功"
+            log_database_operation('add_user', 'users', True, f'User:{username}')
+            return True, "User added successfully"
         except Exception as e:
             log_database_operation('add_user', 'users', False, str(e))
-            return False, f"添加用户失败: {e}"
+            return False, f"Failed to add user:{e}"
         finally:
             conn.close()
 
@@ -192,7 +192,7 @@ def update_user(user_id, username, password):
             # 检查用户名是否与其他用户冲突
             c.execute("SELECT * FROM users WHERE username = ? AND id != ?", (username, user_id))
             if c.fetchone():
-                return False, "用户名已存在"
+                return False, "Username already exists"
             
             c.execute("SELECT password FROM users WHERE id = ?", (user_id,))
             old_password = c.fetchone()[0]
@@ -204,11 +204,11 @@ def update_user(user_id, username, password):
             
             c.execute("UPDATE users SET username = ?, password = ? WHERE id = ?", (username, new_password, user_id))
             conn.commit()
-            log_database_operation('update_user', 'users', True, f'用户: {username}')
-            return True, "用户更新成功"
+            log_database_operation('update_user', 'users', True, f'User:{username}')
+            return True, "User updated successfully"
         except Exception as e:
             log_database_operation('update_user', 'users', False, str(e))
-            return False, f"更新用户失败: {e}"
+            return False, f"Failed to update user:{e}"
         finally:
             conn.close()
 
@@ -222,7 +222,7 @@ def delete_user(user_id):
             c.execute("SELECT username FROM users WHERE id = ?", (user_id,))
             result = c.fetchone()
             if not result:
-                return False, "用户不存在"
+                return False, "User does not exist"
             
             username = result[0]
             
@@ -234,15 +234,15 @@ def delete_user(user_id):
             c.execute("DELETE FROM users WHERE id = ?", (user_id,))
             conn.commit()
             
-            log_message = f'用户: {username}'
+            log_message = f'User:{username}'
             if affected_mounts > 0:
-                log_message += f', 同时清除了 {affected_mounts} 个挂载点的用户绑定'
+                log_message += f', while clearing{affected_mounts}User bindings for mount points'
             
             log_database_operation('delete_user', 'users', True, log_message)
             return True, username
         except Exception as e:
             log_database_operation('delete_user', 'users', False, str(e))
-            return False, f"删除用户失败: {e}"
+            return False, f"Failed to delete user:{e}"
         finally:
             conn.close()
 
@@ -267,18 +267,18 @@ def update_user_password(username, new_password):
             c.execute("SELECT id FROM users WHERE username = ?", (username,))
             result = c.fetchone()
             if not result:
-                return False, "用户不存在"
+                return False, "User does not exist"
             
             
             hashed_password = hash_password(new_password)
             
             c.execute("UPDATE users SET password = ? WHERE username = ?", (hashed_password, username))
             conn.commit()
-            log_info(f"用户 {username} 密码更新成功")
-            return True, "密码更新成功"
+            log_info(f"User{username}Password updated successfully")
+            return True, "Password updated successfully"
         except Exception as e:
-            log_error(f"更新用户密码失败: {e}")
-            return False, f"更新密码失败: {e}"
+            log_error(f"Failed to update user password:{e}")
+            return False, f"Failed to update password:{e}"
         finally:
             conn.close()
 
@@ -291,21 +291,21 @@ def add_mount(mount, password, user_id=None):
            
             c.execute("SELECT * FROM mounts WHERE mount = ?", (mount,))
             if c.fetchone():
-                return False, "挂载点名称已存在"
+                return False, "Mount point name already exists"
             
             # 如果指定了用户ID，验证用户是否存在
             if user_id is not None:
                 c.execute("SELECT id FROM users WHERE id = ?", (user_id,))
                 if not c.fetchone():
-                    return False, "指定的用户不存在"
+                    return False, "The specified user does not exist"
             
             c.execute("INSERT INTO mounts (mount, password, user_id) VALUES (?, ?, ?)", (mount, password, user_id))
             conn.commit()
-            log_database_operation('add_mount', 'mounts', True, f'挂载点: {mount}, 用户ID: {user_id}')
-            return True, "挂载点添加成功"
+            log_database_operation('add_mount', 'mounts', True, f'Mount point:{mount}, User ID:{user_id}')
+            return True, "Mountpoint added successfully"
         except Exception as e:
             log_database_operation('add_mount', 'mounts', False, str(e))
-            return False, f"添加挂载点失败: {e}"
+            return False, f"Failed to add mount point:{e}"
         finally:
             conn.close()
 
@@ -319,7 +319,7 @@ def update_mount(mount_id, mount=None, password=None, user_id=None):
             c.execute("SELECT mount, password, user_id FROM mounts WHERE id = ?", (mount_id,))
             result = c.fetchone()
             if not result:
-                return False, "挂载点不存在"
+                return False, "Mount point does not exist"
             
             old_mount, old_password, old_user_id = result
             
@@ -332,20 +332,20 @@ def update_mount(mount_id, mount=None, password=None, user_id=None):
             if mount is not None and mount != old_mount:
                 c.execute("SELECT * FROM mounts WHERE mount = ? AND id != ?", (mount, mount_id))
                 if c.fetchone():
-                    return False, "挂载点名称已存在"
+                    return False, "Mount point name already exists"
             # 如果指定了用户ID，验证用户是否存在
             if new_user_id is not None:
                 c.execute("SELECT id FROM users WHERE id = ?", (new_user_id,))
                 if not c.fetchone():
-                    return False, "指定的用户不存在"
+                    return False, "The specified user does not exist"
             
             c.execute("UPDATE mounts SET mount = ?, password = ?, user_id = ? WHERE id = ?", (new_mount, new_password, new_user_id, mount_id))
             conn.commit()
-            log_database_operation('update_mount', 'mounts', True, f'挂载点: {old_mount} -> {new_mount}')
+            log_database_operation('update_mount', 'mounts', True, f'Mount point:{old_mount} -> {new_mount}')
             return True, old_mount
         except Exception as e:
             log_database_operation('update_mount', 'mounts', False, str(e))
-            return False, f"更新挂载点失败: {e}"
+            return False, f"Failed to update mount point:{e}"
         finally:
             conn.close()
 
@@ -359,16 +359,16 @@ def delete_mount(mount_id):
             c.execute("SELECT mount FROM mounts WHERE id = ?", (mount_id,))
             result = c.fetchone()
             if not result:
-                return False, "挂载点不存在"
+                return False, "Mount point does not exist"
             
             mount = result[0]
             c.execute("DELETE FROM mounts WHERE id = ?", (mount_id,))
             conn.commit()
-            log_database_operation('delete_mount', 'mounts', True, f'挂载点: {mount}')
+            log_database_operation('delete_mount', 'mounts', True, f'Mount point:{mount}')
             return True, mount
         except Exception as e:
             logger.log_database_operation('delete_mount', 'mounts', False, str(e))
-            return False, f"删除挂载点失败: {e}"
+            return False, f"Failed to delete mount point:{e}"
         finally:
             conn.close()
 
@@ -417,7 +417,7 @@ def update_admin_password(username, new_password):
             hashed_password = hash_password(new_password)
             c.execute("UPDATE admins SET password = ? WHERE username = ?", (hashed_password, username))
             conn.commit()
-            log_database_operation('update_admin_password', 'admins', True, f'管理员: {username}')
+            log_database_operation('update_admin_password', 'admins', True, f'Admin:{username}')
             return True
         except Exception as e:
             log_database_operation('update_admin_password', 'admins', False, str(e))
@@ -459,7 +459,7 @@ class DatabaseManager:
                 break
         
         if user_id is None:
-            return False, "用户不存在"
+            return False, "User does not exist"
         
         return delete_user(user_id)
     
@@ -490,24 +490,24 @@ class DatabaseManager:
             c.execute("SELECT id FROM mounts WHERE mount = ?", (mount,))
             mount_result = c.fetchone()
             if not mount_result:
-                logger.log_authentication(username, mount, False, 'database', '挂载点不存在')
-                return False, "挂载点不存在"
+                logger.log_authentication(username, mount, False, 'database', 'Mount point does not exist')
+                return False, "Mount point does not exist"
             
             c.execute("SELECT id, password FROM users WHERE username = ?", (username,))
             user_result = c.fetchone()
             if not user_result:
-                logger.log_authentication(username, mount, False, 'database', '用户不存在')
-                return False, "用户不存在"
+                logger.log_authentication(username, mount, False, 'database', 'User does not exist')
+                return False, "User does not exist"
             
             user_id, stored_password = user_result
             
             if not verify_password(stored_password, password):
-                logger.log_authentication(username, mount, False, 'database', '用户密码错误')
-                return False, "用户密码错误"
+                logger.log_authentication(username, mount, False, 'database', 'Incorrect user password')
+                return False, "Incorrect user password"
             
            
-            logger.log_authentication(username, mount, True, 'database', '下载认证成功')
-            return True, "下载认证成功"
+            logger.log_authentication(username, mount, True, 'database', 'Download verification successful')
+            return True, "Download verification successful"
     
     def add_mount(self, mount, password=None, user_id=None):
         """添加挂载点"""
@@ -522,11 +522,11 @@ class DatabaseManager:
                 c.execute("UPDATE mounts SET password = ? WHERE mount = ?", (new_password, mount))
                 if c.rowcount > 0:
                     conn.commit()
-                    return True, "挂载点密码更新成功"
+                    return True, "Mountpoint password updated successfully"
                 else:
-                    return False, "挂载点不存在"
+                    return False, "Mount point does not exist"
             except Exception as e:
-                return False, f"更新挂载点密码失败: {str(e)}"
+                return False, f"Failed to update mount point password:{str(e)}"
             finally:
                 conn.close()
     
@@ -548,7 +548,7 @@ class DatabaseManager:
                 break
         
         if mount_id is None:
-            return False, "挂载点不存在"
+            return False, "Mount point does not exist"
         
         return delete_mount(mount_id)
     

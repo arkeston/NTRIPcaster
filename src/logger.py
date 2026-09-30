@@ -166,7 +166,7 @@ class NTRIPLogger:
         """
         # 过滤频繁的日志信息，避免前端刷屏
         filtered_keywords = [
-            '用户活动更新', 'MSM', '卫星', '推送数据', '客户端连接',
+            'User Activity Updates', 'MSM', 'Satellite', 'Push data', 'Client connection',
             'RTCM data', 'Performance:', 'Database', 'bytes for mount'
         ]
         
@@ -269,7 +269,7 @@ class NTRIPLogger:
         if details:
             message += f" - {details}"
         self.get_logger('main').info(message)
-        self._push_to_web(f"系统事件: {event}" + (f" - {details}" if details else ""), 'info')
+        self._push_to_web(f"System events:{event}" + (f" - {details}" if details else ""), 'info')
     
     def log_performance(self, metric, value, unit=''):
         """记录性能指标日志"""

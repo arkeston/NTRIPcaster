@@ -16,10 +16,10 @@ CONFIG_FILE = os.environ.get('NTRIP_CONFIG_FILE',
 config = configparser.ConfigParser()
 
 if os.path.exists(CONFIG_FILE):
-    print(f"加载配置文件: {CONFIG_FILE}")
+    print(f"Load profile:{CONFIG_FILE}")
     config.read(CONFIG_FILE, encoding='utf-8')
 else:
-    raise FileNotFoundError(f"配置文件 {CONFIG_FILE} 不存在")
+    raise FileNotFoundError(f"Profile{CONFIG_FILE}does not exist")
 
 def get_config_value(section, key, fallback=None, value_type=str):
     """获取配置值并转换类型"""
@@ -123,7 +123,7 @@ def get_private_ips() -> List[Tuple[str, str]]:
     
     return private_ips
 
-def get_display_urls(port: int, service_name: str = "服务") -> List[str]:
+def get_display_urls(port: int, service_name: str = "Services") -> List[str]:
     """获取用于显示的所有可访问URL"""
     urls = []
     
@@ -349,21 +349,21 @@ def validate_config():
     
     # 验证端口范围
     if not (1024 <= NTRIP_PORT <= 65535):
-        errors.append(f"NTRIP端口 {NTRIP_PORT} 不在有效范围内 (1024-65535)")
+        errors.append(f"NTRIP port{NTRIP_PORT}Not valid (1024-65535)")
     
     if not (1024 <= WEB_PORT <= 65535):
-        errors.append(f"Web端口 {WEB_PORT} 不在有效范围内 (1024-65535)")
+        errors.append(f"Web Port{WEB_PORT}Not valid (1024-65535)")
     
     # 验证缓冲区大小
     if BUFFER_SIZE <= 0 or BUFFER_SIZE > MAX_BUFFER_SIZE:
-        errors.append(f"缓冲区大小 {BUFFER_SIZE} 无效")
+        errors.append(f"Buffer size{BUFFER_SIZE}Invalid")
     
     # 验证日志目录
     if not os.path.exists(LOG_DIR):
         try:
             os.makedirs(LOG_DIR)
         except Exception as e:
-            errors.append(f"无法创建日志目录 {LOG_DIR}: {e}")
+            errors.append(f"Unable to create log directory{LOG_DIR}: {e}")
     
     return errors
 

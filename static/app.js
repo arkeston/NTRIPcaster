@@ -259,7 +259,7 @@ let mapSwitched = false;
 let currentMountName = null;
 
 function startRTCMParsing(mountName) {
-    console.log(`[前端] 开始启动RTCM解析: ${mountName}`);
+    console.log(`[Front end] StartRTCMParse: ${mountName}`);
     
     // 
     fetch('/api/mount/rtcm-parse/status')
@@ -267,17 +267,17 @@ function startRTCMParsing(mountName) {
     .then(statusData => {
         if (statusData.success) {
             const status = statusData.status;
-            console.log(`[前端] 当前解析器状态:`, status);
-            console.log(`[前端] 当前活跃Web挂载点: ${status.current_web_mount || '无'}`);
-            console.log(`[前端] Web解析线程数: ${status.web_parsers}, STR解析线程数: ${status.str_parsers}`);
+            console.log(`[Front end] Current parser state:`, status);
+            console.log(`[Front end] Currently ActiveWebMount point:${status.current_web_mount || 'None'}`);
+            console.log(`[Front end] WebNumber of resolving threads: ${status.web_parsers}, STRNumber of resolving threads: ${status.str_parsers}`);
             
             if (status.current_web_mount && status.current_web_mount !== mountName) {
-                console.log(`[前端] 检测到前一个活跃挂载点: ${status.current_web_mount}，将被自动清理`);
+                console.log(`[Front end] Previous active mount point detected: ${status.current_web_mount}, will be cleaned automatically`);
             }
         }
     })
     .catch(error => {
-        console.warn(`[前端] 获取解析器状态失败:`, error);
+        console.warn(`[Front end] Failed to get parser status:`, error);
     });
     
     // Reset marking status for new mount point
@@ -293,7 +293,7 @@ function startRTCMParsing(mountName) {
     initializeSatelliteVisualization();
     
     // Call backend API to start RTCM parsing
-    console.log(`[前端] 调用后端API启动RTCM解析: ${mountName}`);
+    console.log(`[Front end] Call backendAPIStartRTCMParse: ${mountName}`);
     fetch(`/api/mount/${mountName}/rtcm-parse/start`, {
         method: 'POST',
         headers: {
@@ -303,25 +303,25 @@ function startRTCMParsing(mountName) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            console.log(`[前端] RTCM解析启动成功: ${mountName}`);
+            console.log(`[Front end] RTCMParsing started successfully: ${mountName}`);
             // 
             setTimeout(() => {
                 fetch('/api/mount/rtcm-parse/status')
                 .then(response => response.json())
                 .then(statusData => {
                     if (statusData.success) {
-                        console.log(`[前端] 启动后解析器状态:`, statusData.status);
+                        console.log(`[Front end] Post-boot parser status:`, statusData.status);
                     }
                 })
-                .catch(error => console.warn(`[前端] 获取启动后状态失败:`, error));
+                .catch(error => console.warn(`[Front end] Failed to get post startup status:`, error));
             }, 1000);
         } else {
-            console.error(`[前端] RTCM解析启动失败: ${data.error || 'Unknown error'}`);
+            console.error(`[Front end] RTCMParseFailed to start:${data.error || 'Unknown error'}`);
             showAlert(`Failed to start RTCM parsing: ${data.error || 'Unknown error'}`, 'error');
         }
     })
     .catch(error => {
-        console.error('[前端] 调用RTCM解析API失败:', error);
+        console.error('[Front end] callRTCMParseAPIfailed:', error);
         showAlert('Failed to call RTCM parsing API', 'error');
     });
 }
@@ -444,7 +444,7 @@ function displayStationInfo(stationData) {
     const stationInfoDiv = document.getElementById('station-info');
     stationInfoDiv.innerHTML = `
         <div class="station-details">
-            <!-- 第一行：基本信息 -->
+            <!-- Line 1: Basic information -->
             <div class="info-row-group">
                 <div class="info-row">
                     <span class="info-label">Mount Point:</span>
@@ -464,7 +464,7 @@ function displayStationInfo(stationData) {
                 </div>
             </div>
             
-            <!-- 第二行：设备信息 -->
+            <!-- Line 2: Device Information -->
             <div class="info-row-group">
                 <div class="info-row">
                     <span class="info-label">Receiver Type:</span>
@@ -484,7 +484,7 @@ function displayStationInfo(stationData) {
                 </div>
             </div>
             
-            <!-- 第三行：坐标信息 -->
+            <!-- Line 3: Coordinate information -->
             <div class="info-row-group coordinates-group">
                 <div class="coordinates-half">
                     <div class="info-row">
@@ -535,17 +535,17 @@ function initializeMap() {
 
 // Initialize map specifically for monitor page
 function initializeMapForMonitor() {
-    console.log('[地图初始化] 开始初始化monitor页面地图');
+    console.log('[Map initialization] Start initializationmonitorPage map');
     
     // Check if we're on monitor page and map container exists
     if (currentPage !== 'monitor') {
-        console.log('[地图初始化] 不在monitor页面，跳过地图初始化');
+        console.log('[Map initialization] is not inmonitorpage, skip map initialization');
         return;
     }
     
     const mapContainer = document.getElementById('map');
     if (!mapContainer) {
-        console.log('[地图初始化] 地图容器不存在，跳过初始化');
+        console.log('[Map initialization] Map container does not exist, skipping initialization');
         return;
     }
     
@@ -565,22 +565,22 @@ function initializeMapForMonitor() {
         newAmapBtn.addEventListener('click', () => switchToAmap());
         newOsmBtn.addEventListener('click', () => switchToOSM());
         
-        console.log('[地图初始化] 地图切换按钮事件已重新绑定');
+        console.log('[Map initialization] Map toggle button event re-bound');
     }
     
     // Force re-initialize map
     if (typeof ol !== 'undefined') {
-        console.log('[地图初始化] OpenLayers已加载，直接初始化地图');
+        console.log('[Map initialization] OpenLayersLoaded, direct initialization of map');
         initMap();
         
         // If we have previous position data, restore the marker
         if (lastPosition.latitude !== null && lastPosition.longitude !== null) {
-            console.log('[地图初始化] 恢复之前的位置标记:', lastPosition);
+            console.log('[Map initialization] Restore previous location markers:', lastPosition);
             // Force re-marking without distance check
             updateMapLocation(lastPosition.latitude, lastPosition.longitude, currentMountName, false);
         }
     } else {
-        console.log('[地图初始化] OpenLayers未加载，开始加载库');
+        console.log('[Map initialization] OpenLayersNot loaded, start loading library');
         loadMapLibrary();
     }
 }
@@ -606,18 +606,18 @@ function loadMapLibrary() {
 
 // Initialize map
 function initMap() {
-    console.log('[地图初始化] 开始创建地图实例');
+    console.log('[Map initialization] Start creating map instances');
     
     // Check if map container exists
     const mapContainer = document.getElementById('map');
     if (!mapContainer) {
-        console.log('[地图初始化] 地图容器不存在，无法创建地图');
+        console.log('[Map initialization] Map container does not exist, unable to create map');
         return;
     }
     
     // Clean up existing map
     if (currentMap) {
-        console.log('[地图初始化] 清理现有地图实例');
+        console.log('[Map initialization] Clean up existing map instances');
         currentMap.setTarget(null);
         currentMap = null;
     }
@@ -641,10 +641,10 @@ function initMap() {
         });
         currentMap.addLayer(markerLayer);
         
-        console.log('[地图初始化] 地图实例创建成功');
+        console.log('[Map initialization] Map instance created successfully');
         updateMapButtons();
     } catch (error) {
-        console.error('[地图初始化] 创建地图实例失败:', error);
+        console.error('[Map initialization] Failed to create map instance:', error);
     }
 }
 
@@ -706,7 +706,7 @@ function updateMapButtons() {
 }
 
 
-// 坐标转换函数：WGS84转GCJ02（火星坐标系）
+// Coordinates转换函数：WGS84转GCJ02(火星Coordinates系)
 function wgs84ToGcj02(lng, lat) {
     const x_pi = 3.14159265358979324 * 3000.0 / 180.0;
     const pi = 3.1415926535897932384626;
@@ -755,16 +755,16 @@ function wgs84ToGcj02(lng, lat) {
 function updateMapLocation(latitude, longitude, mountName = null, isInitialMarking = false) {
     if (!currentMap) return;
     
-    // 根据地图类型决定是否进行坐标转换
+    // 根据地图类型决定是否进行Coordinates转换
     let displayLng = longitude;
     let displayLat = latitude;
     
-    // 如果是高德地图，需要将WGS84坐标转换为GCJ02坐标
+    // 如果是Gaode Map，需要将WGS84Coordinates转换为GCJ02Coordinates
     if (mapType === 'amap') {
         const converted = wgs84ToGcj02(longitude, latitude);
         displayLng = converted[0];
         displayLat = converted[1];
-        console.log(`[坐标转换] WGS84: ${longitude}, ${latitude} -> GCJ02: ${displayLng}, ${displayLat}`);
+        console.log(`[Coordinates转换] WGS84: ${longitude}, ${latitude} -> GCJ02: ${displayLng}, ${displayLat}`);
     }
     
     const center = ol.proj.fromLonLat([displayLng, displayLat]);
@@ -876,9 +876,9 @@ async function loadFrequencyMap() {
     try {
         const response = await fetch('/static/freq_map.json');
         frequencyMap = await response.json();
-        // console.log('频率映射表加载成功');
+        // console.log('Frequency map table loaded successfully');
     } catch (error) {
-        // console.error('频率映射表加载失败:', error);
+        // console.error('Frequency map table loadingfailed:', error);
     }
 }
 
@@ -911,7 +911,7 @@ function getFrequencyInfo(constellation, channel) {
 function initializeSatelliteVisualization() {
     const satelliteContainer = document.getElementById('satellite-container');
     if (!satelliteContainer) {
-        // console.warn('卫星容器不存在，无法初始化卫星可视化');
+        // console.warn('Satellite container does not exist, cannot initialize satellite visualization');
         return;
     }
     
@@ -929,7 +929,7 @@ function initializeSatelliteVisualization() {
         }
     });
     
-    // console.log('卫星可视化初始化完成，已创建', supportedConstellations.length, '个星座容器（初始隐藏状态）');
+    // console.log('Satellite visualization initialized, created', supportedConstellations.length, 'constellation containers (initially hidden)');
 }
 
  
@@ -965,7 +965,7 @@ function createConstellationContainer(constellation) {
 function updateConstellationChart(constellation, satellites) {
     const chartContainer = document.getElementById(`chart-${constellation}`);
     if (!chartContainer) {
-        // console.warn(`图表容器 chart-${constellation} 不存在`);
+        // console.warn(`Chart Container chart-${constellation}does not exist`);
         return;
     }
     
@@ -986,7 +986,7 @@ function updateConstellationChart(constellation, satellites) {
     });
     
     
-    const expireTime = 10000; // 10秒
+    const expireTime = 10000; // 10s
     Object.keys(satelliteData[constellation]).forEach(satName => {
         if (currentTime - satelliteData[constellation][satName].lastUpdate > expireTime) {
             delete satelliteData[constellation][satName];
@@ -1003,7 +1003,7 @@ function updateConstellationChart(constellation, satellites) {
         if (constellationContainer) {
             constellationContainer.style.display = 'none';
         }
-        // console.log(`${constellation} 星座模块已隐藏（无数据）`);
+        // console.log(`${constellation} Constellation module hidden (no data)`);
         return;
     } else {
         
@@ -1087,10 +1087,10 @@ function updateConstellationChart(constellation, satellites) {
 
 
 function getSignalColor(strength) {
-    if (strength >= 40) return '#4CAF50'; // 绿色 Green
-    if (strength >= 30) return '#FFC107'; // 黄色 Yellow
-    if (strength >= 20) return '#FF9800'; // 橙色 Orange 颜色好像不对~
-    return '#F44336'; // 红色 Red
+    if (strength >= 40) return '#4CAF50'; // Green Green
+    if (strength >= 30) return '#FFC107'; // Yellow Yellow
+    if (strength >= 20) return '#FF9800'; // Orange Orange The color doesn't seem right~
+    return '#F44336'; // Red Red
 }
 
 let currentTooltip = null;
@@ -1192,7 +1192,7 @@ function getDashboardContent() {
             <div class="dashboard-timestamp" id="dashboard-timestamp">Loading...</div>
         </div>
         
-        <!-- 系统概览卡片 -->
+        <!-- System Overview Card -->
         <div class="dashboard-cards">
             <div class="dashboard-card">
                 <div class="card-icon">⏰</div>
@@ -1228,7 +1228,7 @@ function getDashboardContent() {
             </div>
         </div>
         
-        <!-- 连接统计 -->
+        <!-- Connection statistics -->
         <div class="dashboard-section">
             <h4>Connection Statistics</h4>
             <div class="stats-grid">
@@ -1263,7 +1263,7 @@ function getDashboardContent() {
             </div>
         </div>
         
-        <!-- 挂载点详情 -->
+        <!-- Mount pointDetails -->
         <div class="dashboard-section">
             <h4>Mount Point Details</h4>
             <div class="mounts-container" id="mounts-detail">
@@ -1439,7 +1439,7 @@ function getDashboardContent() {
 // user
 function getUsersContent(users) {
     let usersHtml = users.map(user => {
-        //两种方式 API获取和socket推送 可以备用
+        //Two ways APIGet andsocketPush Available for spare
         const isOnline = user.online !== undefined ? user.online : (window.onlineUsers && (user.username in window.onlineUsers));
         const statusHtml = isOnline ? 
             '<span style="color: #28a745; font-weight: bold;">● Online</span>' : 
@@ -1502,10 +1502,10 @@ function getUsersContent(users) {
     `;
 }
 
-// 挂载点管理内容
+// Mount pointManage Content
 function getMountsContent(mounts) {
     let mountsHtml = mounts.map(mount => {
-        // 优先使用从API获取的在线状态，如果没有则使用WebSocket数据
+        // Preferred use fromAPIOnline status obtained, use if noneWebSocketData
         const isOnline = mount.active !== undefined ? mount.active : (window.onlineMounts && (mount.mount in window.onlineMounts));
         const statusHtml = isOnline ? 
             '<span style="color: #28a745; font-weight: bold;">● Online</span>' : 
@@ -1550,7 +1550,7 @@ function getMountsContent(mounts) {
     `;
 }
 
-// RTCM监控内容
+// RTCMMonitoring Content
 function getMonitorContent() {
     return `
         <div class="page-header">
@@ -1559,9 +1559,9 @@ function getMonitorContent() {
         </div>
         
         <div class="monitor-dashboard">
-            <!-- 主要内容区域 -->
+            <!-- Main content area -->
             <div class="monitor-grid">
-                <!-- STR数据表 - 全宽 -->
+                <!-- STRDatasheet - Full Width -->
                 <div class="monitor-card full-width">
                     <div class="card-header">
                         <h4><i class="fas fa-table"></i> STR Data Table</h4>
@@ -1571,7 +1571,7 @@ function getMonitorContent() {
                     </div>
                 </div>
 
-                <!-- 基准站信息 - 全宽 -->
+                <!-- Base station information - Full Width -->
                 <div class="monitor-card full-width">
                     <div class="card-header">
                         <h4><i class="fas fa-broadcast-tower"></i> Base Station Information</h4>
@@ -1590,7 +1590,7 @@ function getMonitorContent() {
                     </div>
                 </div>
 
-                <!-- 基准站位置 - 全宽 -->
+                <!-- Reference station location - Full Width -->
                 <div class="monitor-card full-width">
                     <div class="card-header">
                         <h4><i class="fas fa-map-marker-alt"></i> Base Station Location</h4>
@@ -1603,14 +1603,14 @@ function getMonitorContent() {
                                 <p>Waiting for location data...</p>
                             </div>
                             <div id="map-switch" class="map-switch-floating">
-                                <button id="amap-btn" class="btn btn-sm btn-primary">高德地图</button>
+                                <button id="amap-btn" class="btn btn-sm btn-primary">Gaode Map</button>
                                 <button id="osm-btn" class="btn btn-sm btn-secondary">OpenStreetMap</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 卫星数据可视化 - 全宽 -->
+                <!-- Satellite data visualization - Full Width -->
                 <div class="monitor-card full-width">
                     <div class="card-header">
                         <h4><i class="fas fa-satellite"></i> Satellite Data Visualization</h4>
@@ -1694,46 +1694,46 @@ socket.on('system_stats_update', function(data) {
     }
 });
 
-// 调试RTCM 数据
+// CommissioningRTCM Data
 socket.on('rtcm_realtime_data', function(data) {
-    // console.log('[前端接收] 收到RTCM实时数据:', data);
-    // console.log('[前端接收] 数据类型:', typeof data);
-    // console.log('[前端接收] 数据键:', Object.keys(data || {}));
+    // console.log('[Front endReceive] ReceivedRTCMReal-time data:', data);
+    // console.log('[Front endReceive] Data type:', typeof data);
+    // console.log('[Front endReceive] Data keys:', Object.keys(data || {}));
     
-    // 调试信息：显示除MSM类型外的其他数据类型
+    // Debugging information: display divide byMSMOther data types than type
     if (data && data.data_type && data.data_type !== 'msm_satellite') {
-        // console.log('[调试] 收到非MSM数据:', {
-        //     数据类型: data.data_type,
-        //     挂载点: data.mount_name || data.mount,
-        //     时间戳: data.timestamp,
-        //     数据内容: data
+        // console.log('[Commissioning] Received non-MSMData:', {
+        //     Data type: data.data_type,
+        //     Mount point:data.mount_name || data.mount,
+        //     Timestamp: data.timestamp,
+        //     Data content: data
         // });
     }
     
-    // 特别关注天线和设备信息
+    // Pay particular attention to antenna and equipment information
     if (data && data.data_type && ['device_info', 'antenna_info', 'receiver_info'].includes(data.data_type)) {
-        // console.log('[天线设备调试] 收到天线/设备信息:', {
-        //     数据类型: data.data_type,
-        //     挂载点: data.mount_name || data.mount,
-        //     接收机: data.receiver,
-        //     固件: data.firmware,
-        //     天线: data.antenna,
-        //     天线序列号: data.antenna_firmware || data.antenna_serial,
-        //     完整数据: data
+        // console.log('[Antenna equipment commissioning] Received antenna/Device information:', {
+        //     Data type: data.data_type,
+        //     Mount point:data.mount_name || data.mount,
+        //     Receiver: data.receiver,
+        //     Firmware: data.firmware,
+        //     Antenna: data.antenna,
+        //     Antenna serial number: data.antenna_firmware || data.antenna_serial,
+        //     Full data: data
         // });
     }
     
     if (!data || !data.data_type) {
-        // console.warn('收到无效的RTCM数据:', data);
+        // console.warn('Invalid receiptRTCMData:', data);
         return;
     }
     
     try {
         switch (data.data_type) {
             case 'station_position':
-                // 处理基准站位置信息
+                // Processing reference station location information
                 if (data.latitude && data.longitude) {
-                    // console.log(`收到位置信息: ${data.latitude}, ${data.longitude}`);
+                    // console.log(`Location information received: ${data.latitude}, ${data.longitude}`);
                     
                     
                     if (!currentMap && currentPage === 'monitor') {
@@ -1750,15 +1750,15 @@ socket.on('rtcm_realtime_data', function(data) {
                 
             case 'station_info':
                
-                // console.log('收到基准站信息:', data);
+                // console.log('Received base station information:', data);
                 displayStationInfo(data);
                 break;
                 
             case 'msm_satellite':
                
-                // console.log('收到卫星信号数据:', data);
+                // console.log('Satellite signal data received:', data);
                 if (data.gnss && data.sats && Array.isArray(data.sats)) {
-                    // 确保卫星可视化容器已初始化（只在第一次初始化）
+                    // Ensure the Satellite Visualization Container is initialized (only at the first initialization)
                     if (currentPage === 'monitor') {
                         const satelliteContainer = document.getElementById('satellite-container');
                         if (satelliteContainer && !satelliteContainer.querySelector('.constellation-container')) {
@@ -1797,26 +1797,26 @@ socket.on('rtcm_realtime_data', function(data) {
                 break;
                 
             case 'geography':
-                // （1005/1006）
-                // console.log('[地理信息调试] 收到地理位置信息:', data);
-    // console.log('[地理信息调试] 当前页面:', currentPage);
+                // (1005/1006)
+                // console.log('[Geographic debugging] Geolocation information received:', data);
+    // console.log('[Geographic debugging] Current page:', currentPage);
                 
-                // 只在monitor页面处理基准站信息显示
+                // Only inmonitorPage processing reference station information display
                 if (currentPage !== 'monitor') {
-                    // console.log('[地理信息调试] 不在monitor页面，跳过基准站信息显示');
+                    // console.log('[Geographic debugging] is not inmonitorpage, skip display of reference station information');
                     break;
                 }
                 
                 
                 const stationInfoDiv = document.getElementById('station-info');
-                // console.log('[地理信息调试] station-info元素:', stationInfoDiv);
-    // console.log('[地理信息调试] station-info内容:', stationInfoDiv ? stationInfoDiv.innerHTML : 'station-info不存在');
-    // console.log('[地理信息调试] 是否有empty-state:', stationInfoDiv ? stationInfoDiv.querySelector('.empty-state') : 'station-info不存在');
-    // console.log('[地理信息调试] 是否有station-details:', stationInfoDiv ? stationInfoDiv.querySelector('.station-details') : 'station-info不存在');
+                // console.log('[Geographic debugging] station-infoElement:', stationInfoDiv);
+    // console.log('[Geographic debugging] station-infoContent:', stationInfoDiv ? stationInfoDiv.innerHTML : 'station-infodoes not exist');
+    // console.log('[Geographic debugging] Yes Noempty-state:', stationInfoDiv ? stationInfoDiv.querySelector('.empty-state') : 'station-infodoes not exist');
+    // console.log('[Geographic debugging] Yes Nostation-details:', stationInfoDiv ? stationInfoDiv.querySelector('.station-details') : 'station-infodoes not exist');
                 
                 if (stationInfoDiv && (stationInfoDiv.querySelector('.empty-state') || !stationInfoDiv.querySelector('.station-details'))) {
-                    // 如果还是空状态，先创建基础结构
-                    // console.log('[地理信息调试] 检测到empty-state，创建基础结构');
+                    // If still empty, create infrastructure first
+                    // console.log('[Geographic debugging] Detectedempty-state, Create Infrastructure');
                     const stationData = {
                         name: data.mount_name || data.mount || 'Unknown',
                         id: data.station_id || 'Unknown',
@@ -1831,30 +1831,30 @@ socket.on('rtcm_realtime_data', function(data) {
                         receiver: { name: 'Unknown', firmware: 'Unknown' },
                         antenna: { name: 'Unknown', serial: 'Unknown' }
                     };
-                    // console.log('[地理信息调试] 准备显示基准站信息:', stationData);
+                    // console.log('[Geographic debugging] Prepare to display base station information:', stationData);
                     displayStationInfo(stationData);
                 } else {
-                    // 如果结构已存在，直接更新数据
-                    // console.log('[地理信息调试] 基础结构已存在，更新数据');
-        // console.log('[地理信息调试] 完整数据内容:', data);
+                    // If the structure already exists, update the data directly
+                    // console.log('[Geographic debugging] Infrastructure already exists, update data');
+        // console.log('[Geographic debugging] Full data content:', data);
                     
                     
                     if (data.mount_name || data.mount) {
-                        // console.log('[地理信息调试] 更新挂载点名称:', data.mount_name || data.mount);
+                        // console.log('[Geographic debugging] UpdatesMount Point Name:', data.mount_name || data.mount);
                         updateElement('station-name', data.mount_name || data.mount);
                     }
                     
                     
                     if (data.station_id !== undefined) {
-                        // console.log('[地理信息调试] 更新基准站ID:', data.station_id);
+                        // console.log('[Geographic debugging] Update Reference StationID:', data.station_id);
                         updateElement('station-id', data.station_id.toString());
                     }
                     
                     
                     if (data.lat !== undefined && data.lon !== undefined) {
-                        // console.log('[地理信息调试] 更新经纬度:', data.lat, data.lon);
+                        // console.log('[Geographic debugging] Update latitude and longitude:', data.lat, data.lon);
                         
-                        // 存储当前挂载点名称
+                        // Store currentMount Point Name
                         currentMountName = data.mount_name || data.mount || null;
                         
                         
@@ -1869,33 +1869,33 @@ socket.on('rtcm_realtime_data', function(data) {
                     
                    
                     if (data.height !== undefined) {
-                        // console.log('[地理信息调试] 更新高程:', data.height);
+                        // console.log('[Geographic debugging] Update elevation:', data.height);
                         updateElement('station-height', data.height.toFixed(3) + ' m');
                     }
                     
                     // ECEF  XYZ
                     if (data.x !== undefined && data.y !== undefined && data.z !== undefined) {
-                        // console.log('[地理信息调试] 更新XYZ坐标:', data.x, data.y, data.z);
+                        // console.log('[Geographic debugging] UpdatesXYZCoordinates:', data.x, data.y, data.z);
                         updateElement('station-xyz', `X: ${data.x.toFixed(3)}, Y: ${data.y.toFixed(3)}, Z: ${data.z.toFixed(3)}`);
                     }
                     
                     // country
                     if (data.country || data.country_name) {
-                        // console.log('[地理信息调试] 更新国家:', data.country_name || data.country);
+                        // console.log('[Geographic debugging] Update country:', data.country_name || data.country);
                         updateElement('station-country', data.country_name || 'Unknown');
                     }
                     
                     // city
                     if (data.city) {
-                        // console.log('[地理信息调试] 更新城市:', data.city);
+                        // console.log('[Geographic debugging] Update city:', data.city);
                         updateElement('station-city', data.city);
                     }
                 }
                 break;
                 
             case 'device_info':
-                // （1033）
-                // console.log('收到设备信息:', data);
+                // (1033)
+                // console.log('Device information received:', data);
                 if (data.receiver) {
                     updateElement('receiver-type', data.receiver);
                 }
@@ -1911,7 +1911,7 @@ socket.on('rtcm_realtime_data', function(data) {
                 break;
                 
             case 'antenna_info':
-                // console.log('收到天线信息:', data);
+                // console.log('Received antenna information:', data);
                 if (data.antenna_type) {
                     updateElement('antenna-type', data.antenna_type);
                 }
@@ -1921,7 +1921,7 @@ socket.on('rtcm_realtime_data', function(data) {
                 break;
                 
             case 'receiver_info':
-                // console.log('收到接收机信息:', data);
+                // console.log('Received receiver information:', data);
                 if (data.receiver_type) {
                     updateElement('receiver-type', data.receiver_type);
                 }
@@ -1931,11 +1931,11 @@ socket.on('rtcm_realtime_data', function(data) {
                 break;
                 
             default:
-                // console.log(`未处理的数据类型: ${data.data_type}`, data);
+                // console.log(`Unprocessed data types: ${data.data_type}`, data);
                 break;
         }
     } catch (error) {
-        // console.error('处理RTCM数据时发生错误:', error, data);
+        // console.error('ProcessingRTCMError in data:', error, data);
     }
 });
 
@@ -2022,7 +2022,7 @@ function requestSystemStats() {
     socket.emit('request_system_stats');
 }
 
-// （API）
+// (API)
 async function fetchSystemStats() {
     try {
         const response = await fetch('/api/system/stats');
@@ -2030,10 +2030,10 @@ async function fetchSystemStats() {
             const stats = await response.json();
             updateSystemStats(stats);
         } else {
-            // console.error('获取系统统计数据失败:', response.status);
+            // console.error('Get system statisticsfailed:', response.status);
         }
     } catch (error) {
-        // console.error('获取系统统计数据异常:', error);
+        // console.error('Abnormal acquisition of system statistics:', error);
     }
 }
 

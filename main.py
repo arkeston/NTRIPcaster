@@ -14,7 +14,7 @@ from threading import Thread
 
 # 解析命令行参数
 parser = argparse.ArgumentParser(description='2RTK NTRIP Caster')
-parser.add_argument('--config', type=str, help='配置文件路径')
+parser.add_argument('--config', type=str, help='Profile Path')
 args = parser.parse_args()
 
 # 添加项目根目录到Python路径
@@ -45,7 +45,7 @@ def setup_logging():
     logging.getLogger('engineio').setLevel(logging.WARNING)
     
     # 记录系统启动日志
-    logger.log_system_event('日志系统初始化完成')
+    logger.log_system_event('Log system initialization complete')
 
 def print_banner():
     """打印启动横幅"""
@@ -59,8 +59,8 @@ def print_banner():
     ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝
     2RTK Ntrip Caster {config.VERSION}
 
-NTRIP端口: {config.NTRIP_PORT:<8} Web管理端口: {config.WEB_PORT:<8} 
-调试模式: {str(config.DEBUG):<9} 最大连接: {config.MAX_CONNECTIONS:<8} 
+NTRIPPort: {config.NTRIP_PORT:<8}Web management port:{config.WEB_PORT:<8} 
+Commissioning模式: {str(config.DEBUG):<9}Max connections:{config.MAX_CONNECTIONS:<8} 
 
     """
     print(banner)
@@ -71,7 +71,7 @@ def check_environment():
     
     # 检查Python版本
     if sys.version_info < (3, 7):
-        logger.error("需要Python 3.7或更高版本")
+        logger.error("Requires Python 3.7 or higher")
         sys.exit(1)
     
     # 检查必要的目录
@@ -82,7 +82,7 @@ def check_environment():
     
     for dir_path in required_dirs:
         if not dir_path.exists():
-            logger.info(f"创建目录: {dir_path}")
+            logger.info(f"Create directory:{dir_path}")
             dir_path.mkdir(parents=True, exist_ok=True)
     
     # 检查端口是否可用
@@ -94,7 +94,7 @@ def check_environment():
                 s.bind(('', port))
             return True
         except OSError:
-            logger.error(f"{name}端口 {port} 已被占用")
+            logger.error(f"{name}Port{port}already taken")
             return False
     
     ports_ok = True
@@ -102,10 +102,10 @@ def check_environment():
     ports_ok &= check_port(config.WEB_PORT, "Web")
     
     if not ports_ok:
-        logger.error("端口检查失败，请检查端口占用情况")
+        logger.error("Port check failed, please check port occupancy")
         sys.exit(1)
     
-    logger.info("环境检查通过")
+    logger.info("Environmental inspection passed")
 
 class ServiceManager:
     """服务管理器 - 统一管理所有服务组件"""
@@ -128,20 +128,20 @@ class ServiceManager:
         """启动所有服务"""
         try:
             self.start_time = time.time()
-            logger.log_system_event(f'启动2RTK NTRIP Caster v{config.VERSION}')
+            logger.log_system_event(f'Launch 2RTK NTRIP Caster v{config.VERSION}')
             
             # 1. 初始化数据库
             self.db_manager = DatabaseManager()
             self.db_manager.init_database()
-            logger.log_system_event('数据库初始化完成')
+            logger.log_system_event('Database initialization complete')
             
             # 2. 初始化并启动数据转发器
             forwarder.initialize()
             forwarder.start_forwarder()
-            logger.log_system_event('数据转发器初始化完成')
+            logger.log_system_event('Data transponder initialization complete')
             
             # 3. RTCM解析现在集成在connection_manager中，无需单独启动
-            logger.log_system_event('RTCM解析器集成完成')
+            logger.log_system_event('RTCM parser integration complete')
             
             # 4. 启动Web管理界面
             self._start_web_interface()
@@ -157,7 +157,7 @@ class ServiceManager:
             signal.signal(signal.SIGTERM, self._signal_handler)
             
             self.running = True
-            logger.log_system_event(f'所有服务已启动 - NTRIP端口: {config.NTRIP_PORT}, Web端口: {config.WEB_PORT}')
+            logger.log_system_event(f'All Services Started - NTRIP Port:{config.NTRIP_PORT}, Web Port:{config.WEB_PORT}')
             
             # 启动统计监控线程
             self._start_stats_monitor()
@@ -166,7 +166,7 @@ class ServiceManager:
             self._main_loop()
             
         except Exception as e:
-            logger.log_error(f"启动服务失败: {e}", exc_info=True)
+            logger.log_error(f"Failed to start service:{e}", exc_info=True)
             self.stop_all_services()
             raise
     
@@ -189,11 +189,11 @@ class ServiceManager:
         self.web_thread.start()
         
         # 显示所有可访问的Web管理界面地址
-        web_urls = config.get_display_urls(config.WEB_PORT, "Web管理界面")
+        web_urls = config.get_display_urls(config.WEB_PORT, "Web Admin Interface")
         if len(web_urls) == 1:
-            logger.log_info(f'Web管理界面已启动，管理地址: {web_urls[0]}')
+            logger.log_info(f'Web Admin Interface started, Admin Address:{web_urls[0]}')
         else:
-            logger.log_system_event('Web管理界面已启动，可通过以下地址访问:')
+            logger.log_system_event('The web administration interface has been launched and can be accessed at the following address:')
             for url in web_urls:
                 logger.log_system_event(f'  - {url}')
     
@@ -210,7 +210,7 @@ class ServiceManager:
                 if self.running:
                     self._update_system_stats()
             except Exception as e:
-                logger.log_error(f"统计监控异常: {e}", exc_info=True)
+                logger.log_error(f"Statistical monitoring abnormalities:{e}", exc_info=True)
     
     def _update_system_stats(self):
         """更新系统统计信息到缓存"""
@@ -252,7 +252,7 @@ class ServiceManager:
             }
             
         except Exception as e:
-            logger.log_error(f"更新统计信息失败: {e}", exc_info=True)
+            logger.log_error(f"Failed to update statistics:{e}", exc_info=True)
     
 
     
@@ -297,29 +297,29 @@ class ServiceManager:
                 }
             return {}
         except Exception as e:
-            logger.log_error(f"获取系统统计数据失败: {e}", exc_info=True)
+            logger.log_error(f"Failed to get system statistics:{e}", exc_info=True)
             return {}
     
     def set_print_stats(self, enabled):
         """设置是否在控制台打印统计信息"""
         self.print_stats = enabled
         if enabled:
-            logger.log_system_event('已启用控制台统计信息打印')
+            logger.log_system_event('Console statistics printing enabled')
         else:
-            logger.log_system_event('已禁用控制台统计信息打印')
+            logger.log_system_event('Console Statistics Printing Disabled')
     
     def _calculate_network_bandwidth(self, current_stats):
         """计算网络带宽"""
         if self.last_network_stats is None:
             self.last_network_stats = (current_stats, time.time())
-            return "计算中..."
+            return "Calculating..."
         
         last_stats, last_time = self.last_network_stats
         current_time = time.time()
         time_diff = current_time - last_time
         
         if time_diff <= 0:
-            return "计算中..."
+            return "Calculating..."
         
         bytes_sent_diff = current_stats.bytes_sent - last_stats.bytes_sent
         bytes_recv_diff = current_stats.bytes_recv - last_stats.bytes_recv
@@ -330,7 +330,7 @@ class ServiceManager:
         
         self.last_network_stats = (current_stats, current_time)
         
-        return f"↑{upload_mbps:.2f} Mbps ↓{download_mbps:.2f} Mbps (总计: {total_mbps:.2f} Mbps)"
+        return f"↑{upload_mbps:.2f} Mbps ↓{download_mbps:.2f}Mbps (Total:{total_mbps:.2f} Mbps)"
     
     def _format_uptime(self, seconds):
         """格式化运行时间"""
@@ -340,11 +340,11 @@ class ServiceManager:
         secs = int(seconds % 60)
         
         if days > 0:
-            return f"{days}天 {hours}小时 {minutes}分钟"
+            return f"{days}days{hours}hours{minutes}min"
         elif hours > 0:
-            return f"{hours}小时 {minutes}分钟"
+            return f"{hours}hours{minutes}min"
         else:
-            return f"{minutes}分钟 {secs}秒"
+            return f"{minutes}min{secs}s"
 
     def _main_loop(self):
         """主循环 - 监控服务状态"""
@@ -352,43 +352,43 @@ class ServiceManager:
             try:
                 # 检查各服务状态
                 if self.ntrip_caster and not self.ntrip_caster.running:
-                    logger.log_error('NTRIP服务器意外停止')
+                    logger.log_error('Unexpected stop of NTRIP server')
                     break
                     
                 if self.web_thread and not self.web_thread.is_alive():
-                    logger.log_error('Web服务意外停止')
+                    logger.log_error('Unexpected stop of web service')
                     break
                 
                 # 短暂休眠避免CPU占用过高
                 time.sleep(1)
                 
             except Exception as e:
-                logger.log_error(f"主循环异常: {e}", exc_info=True)
+                logger.log_error(f"Main cycle abnormality:{e}", exc_info=True)
                 break
     
     def _signal_handler(self, signum, frame):
         """信号处理器"""
         if self.stopping:
-            logger.log_system_event(f'收到信号 {signum}，但服务正在关闭中，忽略重复信号')
+            logger.log_system_event(f'Signal received{signum}, but the service is shutting down, ignoring duplicate signals')
             return
-        logger.log_system_event(f'收到信号 {signum}，开始关闭所有服务')
+        logger.log_system_event(f'Signal received{signum}, start shutting down all services')
         self.stop_all_services()
     
     def stop_all_services(self):
         """停止所有服务"""
         if self.stopping:
-            logger.log_system_event('服务正在关闭中，避免重复调用')
+            logger.log_system_event('The service is shutting down, avoiding duplicate calls')
             return
             
         self.stopping = True
-        logger.log_system_event('正在关闭所有服务')
+        logger.log_system_event('Shutting down all services')
         
         try:
             self.running = False
             
             # 等待统计监控线程结束
             if self.stats_thread and self.stats_thread.is_alive():
-                logger.log_system_event('正在停止统计监控线程')
+                logger.log_system_event('Stopping statistical monitoring thread')
                 self.stats_thread.join(timeout=2)
             
             # 停止NTRIP服务器
@@ -396,25 +396,25 @@ class ServiceManager:
                 try:
                     self.ntrip_caster.stop()
                 except Exception as e:
-                    logger.log_error(f'停止NTRIP服务器时出错: {e}')
+                    logger.log_error(f'Error stopping NTRIP server:{e}')
         
             # 停止数据转发器
             try:
                 forwarder.stop_forwarder()
             except Exception as e:
-                logger.log_error(f'停止数据转发器时出错: {e}')
+                logger.log_error(f'Error stopping data forwarder:{e}')
             
             # 停止Web管理器
             if self.web_manager:
                 try:
                     self.web_manager.stop_rtcm_parsing()
                 except Exception as e:
-                    logger.log_error(f'停止Web管理器时出错: {e}')
+                    logger.log_error(f'Error stopping web manager:{e}')
             
-            logger.log_system_event('所有服务已关闭')
+            logger.log_system_event('All services are turned off')
             
         except Exception as e:
-            logger.log_error(f'关闭服务时发生异常: {e}')
+            logger.log_error(f'An exception occurred while shutting down the service:{e}')
         finally:
             # 确保停止标志位被重置（虽然程序即将退出）
             self.stopping = False
@@ -442,7 +442,7 @@ def main():
         
         # 初始化配置
         config.init_config()
-        logger.log_system_event('配置初始化完成')
+        logger.log_system_event('Configuration initialization complete')
         
         # 创建服务器实例并启动所有服务
         server = ServiceManager()
@@ -450,14 +450,14 @@ def main():
         server.start_all_services()
         
     except KeyboardInterrupt:
-        logger.log_system_event('收到中断信号，正在关闭服务')
+        logger.log_system_event('Received interrupt signal, shutting down service')
     except Exception as e:
-        logger.log_error(f"启动失败: {e}", exc_info=True)
+        logger.log_error(f"Failed to start:{e}", exc_info=True)
         sys.exit(1)
     finally:
         if server:
             server.stop_all_services()
-        logger.log_system_event('程序已退出')
+        logger.log_system_event('Program exited')
         logger.shutdown_logging()
 
 if __name__ == '__main__':

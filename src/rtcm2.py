@@ -200,11 +200,11 @@ class RTCMParserThread(threading.Thread):
         self.stats_delay = 5.0  # 延迟5秒开始统计，避免缓冲区历史数据影响
         self.stats_enabled = False  # 统计是否已启用
         
-        log_debug(f"RTCMParserThread初始化 [挂载点: {mount_name}, 模式: {mode}]")
+        log_debug(f"RTCMParserThread Initialization [Mount Point:{mount_name}, Mode:{mode}]")
 
     def run(self):
         """线程主逻辑"""
-        log_info(f"启动解析线程 [挂载点: {self.mount_name}, 模式: {self.mode}]")
+        log_info(f"Start the resolution thread [Mount point:{self.mount_name}, Mode:{self.mode}]")
         try:
             # 注册数据订阅
             forwarder.register_subscriber(self.mount_name, self.pipe_w)
@@ -215,7 +215,7 @@ class RTCMParserThread(threading.Thread):
             while self.running.is_set():
                 # STR模式超时检查
                 if self.mode == "str_fix" and time.time() - self.start_time > self.duration:
-                    log_info(f"RTCM解析线程已完成 [挂载点: {self.mount_name}, 时长: {self.duration}s]")
+                    log_info(f"RTCM resolution thread completed [Mount point:{self.mount_name}, Duration:{self.duration}s]")
                     break
 
                 # 读取并解析消息
@@ -231,7 +231,7 @@ class RTCMParserThread(threading.Thread):
                         self.stats_start_time = current_time  # 重置统计开始时间
                         self.last_stats_time = current_time
                         self.total_bytes = 0  # 重置字节计数
-                        log_info(f"开始统计比特率 [挂载点: {self.mount_name}] - 延迟{self.stats_delay}秒后启用")
+                        log_info(f"Start counting bitrate [mount point:{self.mount_name}] - Delay{self.stats_delay}Enabled in seconds")
                     
                     # 更新总字节数（仅在统计启用后）
                     if self.stats_enabled:
@@ -270,16 +270,16 @@ class RTCMParserThread(threading.Thread):
                         # 超时错误只记录调试信息，不记录错误日志
                         continue
                     else:
-                        log_error(f"消息解析错误 [挂载点: {self.mount_name}]: {error_msg}")
+                        log_error(f"Message parsing error [Mount point:{self.mount_name}]: {error_msg}")
 
         except Exception as e:
-            log_error(f"解析线程异常 [挂载点: {self.mount_name}]: {str(e)}")
+            log_error(f"Resolve Thread Exception [Mount Point:{self.mount_name}]: {str(e)}")
         finally:
             # 清理资源
             forwarder.unregister_subscriber(self.mount_name, self.pipe_w)
             self.pipe_r.close()
             self.pipe_w.close()
-            log_info(f"解析线程停止 [挂载点: {self.mount_name}]")
+            log_info(f"Resolve Thread Stop [Mount Point:{self.mount_name}]")
 
     def _get_msg_id(self, msg: RTCMMessage) -> Optional[int]:
         """获取消息ID（安全处理）"""
@@ -352,7 +352,7 @@ class RTCMParserThread(threading.Thread):
 
         except Exception as e:
             # print(f"[1005/1006消息] 位置信息解析错误: {str(e)}")
-            log_error(f"位置信息解析错误: {str(e)}")
+            log_error(f"Location information parsing error:{str(e)}")
 
     def _reverse_geocode(self, lat: float, lon: float, min_population: int = 10000) -> Tuple[Optional[str], Optional[str], Optional[str]]:
         """
@@ -371,7 +371,7 @@ class RTCMParserThread(threading.Thread):
             # 对于单个坐标，使用get方法而不是search方法
             result = reverse_geocode.get((lat, lon), min_population=min_population)
             if not result:
-                log_warning(f"地理编码查询无结果: lat={lat}, lon={lon}")
+                log_warning(f"No results for geocoding query: lat ={lat}, lon={lon}")
                 return None, None, None
             
             # 提取所需字段（处理可能的缺失值）
@@ -380,10 +380,10 @@ class RTCMParserThread(threading.Thread):
             city_name = result.get("city")
             return country_code, country_name, city_name
         except ImportError:
-            log_warning("未安装reverse_geocode库，请先执行：pip install reverse-geocode")
+            log_warning("reverse_geocode library is not installed, please do: pip install reverse-geocode")
             return None, None, None
         except Exception as e:
-            log_warning(f"地理编码查询失败: {str(e)}")
+            log_warning(f"Geocoding query failed:{str(e)}")
             return None, None, None
 
     # -------------------------- 1033消息处理函数 --------------------------
@@ -473,7 +473,7 @@ class RTCMParserThread(threading.Thread):
 
         except Exception as e:
             # print(f"[1033消息] 设备信息解析错误: {str(e)}")
-            log_error(f"设备信息解析错误: {str(e)}")
+            log_error(f"Error parsing device information:{str(e)}")
 
     # -------------------------- 比特率统计函数 --------------------------
     def _calculate_bitrate(self) -> None:
@@ -492,14 +492,14 @@ class RTCMParserThread(threading.Thread):
         with self.result_lock:
             self.result["bitrate"] = round(bitrate, 2)
         
-        log_debug(f"比特率统计 [挂载点: {self.mount_name}] - 周期: {elapsed:.1f}s, 字节: {self.total_bytes}, 比特率: {bitrate:.2f}bps, 总统计时间: {total_elapsed:.1f}s")
+        log_debug(f"Bitrate statistics [Mount point:{self.mount_name}] - Period:{elapsed:.1f}s, bytes:{self.total_bytes}, Bitrate:{bitrate:.2f}bps, statistical time:{total_elapsed:.1f}s")
         
         self._push_data(DataType.BITRATE, {
             "mount": self.mount_name,
             "bitrate": round(bitrate, 2),
             "period": f"{elapsed:.1f}s"
         })
-        log_debug(f"比特率更新 [挂载点: {self.mount_name}]: {bitrate:.2f} bps, 周期: {elapsed:.1f}s, 字节数: {self.total_bytes}")
+        log_debug(f"Bitrate update [Mount point:{self.mount_name}]: {bitrate:.2f}bps, period:{elapsed:.1f}s, Bytes:{self.total_bytes}")
         
         # 重置字节计数器和统计时间，避免累积导致比特率偏大
         self.total_bytes = 0
@@ -549,7 +549,7 @@ class RTCMParserThread(threading.Thread):
             }
 
         self._push_data(DataType.MESSAGE_STATS, stats_data)
-        log_debug(f"统计信息更新 [挂载点: {self.mount_name}]: {stats_data}")
+        log_debug(f"Statistical update [Mount point:{self.mount_name}]: {stats_data}")
 
     # -------------------------- MSM消息处理函数 --------------------------
     def _process_msm_messages(self, msg: RTCMMessage, msg_id: int) -> None:
@@ -597,10 +597,10 @@ class RTCMParserThread(threading.Thread):
                     "total_sats": len(sats_data),
                     "sats": sats_data
                 })
-                log_debug(f"推送MSM卫星信号数据: {meta.get('gnss')} 消息{msg_id}, {len(sats_data)}个卫星")
+                log_debug(f"Push MSM satellite signal data:{meta.get('gnss')}Message{msg_id}, {len(sats_data)}satellites")
 
         except Exception as e:
-            log_debug(f"MSM消息解析跳过: {str(e)}")  # 非致命错误，仅调试日志
+            log_debug(f"MSM message parsing skipped:{str(e)}")  # 非致命错误，仅Commissioning日志
 
     # -------------------------- 模式处理分发 --------------------------
     def _process_str_fix(self, msg: RTCMMessage, msg_id: int, raw: bytes) -> None:
@@ -646,14 +646,14 @@ class RTCMParserThread(threading.Thread):
                     **data  # 展开data字典的内容到顶层
                 })
             except Exception as e:
-                log_error(f"数据推送失败: {str(e)}")
+                log_error(f"Data push failed:{str(e)}")
 
     # -------------------------- 线程控制 --------------------------
     def stop(self) -> None:
         """停止解析线程"""
         self.running.clear()
         self.join(timeout=5)
-        log_info(f"[挂载点: {self.mount_name}解析线程已关闭]")
+        log_info(f"[Mount point:{self.mount_name}Resolve Thread Closed]")
 
 
 # -------------------------- 解析接口 --------------------------
